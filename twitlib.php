@@ -1,29 +1,21 @@
 <?php
-	require($_SERVER['DOCUMENT_ROOT']."/../main_scripts/config.php");
+	require("../../main_scripts/config.php");
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 	
-	if(isset($_GET['harvest-archive'])) {
-		$min = (isset($_GET['min']))?$_GET['min']:0;
-		$max = (isset($_GET['max']))?$_GET['max']:0;
-		$num = (isset($_GET['num']))?$_GET['num']:0;
-
-		harvest_tweets($_GET['harvest-archive'],$num,$min,$max);
-	}	
-
 	function display_tweets($min=0,$max=100) {
 
 	}
 
-	function harvest_tweets($archive,$num=100,$min=0,$max=0,$mode="mixed") {
+	function harvest_tweets($search,$num=100,$since=0,$max=0,$type="mixed") {
 		$adet = get_archive_details($archive);
 
 		$base = "https://search.twitter.com/search.json";
-		$url = $base."?q=".$adet['search']."&rpp=".$num
+		$url = $base."?q=".$search."&rpp=".$num
 			."&result_type=".$type;
-var_dump($url);
+
 		if($min > 0) {
-			$url .= "&since_id=".$min;	
+			$url .= "&since_id=".$since;	
 		}
 
 		if($max > 0) {
@@ -35,10 +27,22 @@ var_dump($url);
 		curl_setopt($ch,CURLOPT_HEADER,false);
 		curl_setopt($ch,CURLOPT_FOLLOWLOCATION,true);
 		$tweets = json_decode(curl_exec($ch));
-var_dump($tweets);
-		foreach($tweets->results as $key => $result) {
-			save_tweet($result,$archive);
+
+		return $tweets;
+	}
+
+	function list_archives() {
+		global $conn;
+
+		$res = $conn->query("select * from tw_archive");
+		
+		$archive_list = array();
+
+		while($row = $res->fetch_assoc()) {
+			array_push($archive_list,$row);
 		}
+
+		return $archive_list;
 	}
 
 	function get_archive_details($archive) {
@@ -47,7 +51,7 @@ var_dump($tweets);
 
 		$details = $conn->query("select * from tw_archive where name = "
 			."'$archive'");
-			var_dump("select * from tw_archive where name = '$archive'");
+
 		return $details->fetch_assoc();
 	}
 
@@ -76,8 +80,19 @@ var_dump($tweets);
 			$conn->query("insert into tw_tweets values ("
 				."'$tid','$uid','$archive','$text','$date',"
 				."'$reply_tweet','$reply_user')");
+			
+			return $conn->affected_rows;
+		} else {
+			return -1;
 		}
 
+	}
+
+	function archive_updated($archive) {
+		global $conn;
+
+		$conn->query("update tw_archive set last_updated = current_timestamp() "
+			."where name = '$archive'");
 	}
 
 	function add_user($uid,$username,$name,$image) {
