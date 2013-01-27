@@ -1,0 +1,5 @@
+Options -MultiViews
+RewriteEngine on
+RewriteBase /twive
+
+RewriteRule ^([-_a-zA-Z1-9]+)/?$ index.php?archive=$1
