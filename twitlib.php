@@ -3,7 +3,56 @@
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 	
-	function display_tweets($min=0,$max=100) {
+	/**
+	* Mandataory argument $archive must be name of an existing archive.
+	*
+	* Optional arg. $ord is column name followed by '+' (asc) or '-' (desc)
+	*
+	* Optional arg. $criteria is array of form 'col' => array('op','val')...,
+	*   recognised op values are =,<,>,like
+	*
+	* returns array of tweet arrays
+	*/
+	function get_tweets($archive,$to = 0,$from = 0,$ord = "date-",
+		$criteria = array()) {
+		global $conn;
+
+		$sql = "select * from tw_tweets where archive = '$archive' ";
+
+		foreach(array_keys($criteria) as $col) {
+			$op = $criteria[$col][0];
+			$val = $criteria[$col][1];
+			if($op == "like") {
+				$sql .= "and $col like '%$val%' ";
+			} else {
+				$sql .= "and $col $op '$val' ";
+			}
+		}
+
+		preg_match('/([a-zA-Z]+)([+-])/',$ord,$m);
+		$sql .= "order by ".$m[1]." ";
+		if($m[2] == '-') {
+			$sql .= "desc ";
+		}
+
+		if($from > 0) {
+			$sql .= "limit $from, $to";
+		} elseif ($to > 0) {
+			$sql .= "limit $to";
+		}
+
+		$res = $conn->query($sql);
+
+		$tweets = array();
+
+		while($row = $res->fetch_assoc()) {
+			array_push($tweets,$row);
+		}
+
+		return $tweets;
+	}
+
+	function format_tweet($tweet) {
 
 	}
 
