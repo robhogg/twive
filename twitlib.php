@@ -53,10 +53,38 @@
 	}
 
 	function format_tweet($tweet) {
+		$auth = get_author($tweet['uid']);
 
+
+		$authlink = '<a href="http://twitter.com/'.$auth['username'].'" '
+			.'class="tweet-auth">'.$auth['username'].':</a>';
+		
+		$text = preg_replace('/(https?:\/\/[^ ]*)/',
+			"<a href=\"$1\" class=\"tweet-link\">$1</a>",
+			$tweet['text']);
+		$text = preg_replace('/@([a-zA-Z0-9_]+)/',
+			"<a href=\"http://twitter.com/$1\" class=\"tweet-to\">@$1</a>",
+			$text);
+		$text = preg_replace('/#([a-zA-Z0-9_]+)/',
+			"<a href=\"http://twitter.com/search?q=%23$1\" class=\"tweet-hash\">"
+			."#$1</a>",$text);
+
+		$tweet_link = '<a href="http://twitter.com/'.$auth['username'].'/status/'
+			.$tweet['tid'].'" class="tweet-permalink">'
+			.tweet_date_format($tweet['date']).'</a>';
+
+		return "$authlink $text $tweet_link";
 	}
 
-	function harvest_tweets($search,$num=100,$since=0,$max=0,$type="mixed") {
+	function get_author($uid) {
+		global $conn;
+
+		$res = $conn->query("select * from tw_users where uid = '$uid'");
+
+		return $res->fetch_assoc();
+	}
+
+	function harvest_tweets($search,$num=100,$since=0,$max=0,$type="recent") {
 		$adet = get_archive_details($archive);
 
 		$base = "https://search.twitter.com/search.json";
