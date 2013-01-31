@@ -3,6 +3,58 @@
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 	
+	function get_header($archname) {
+		echo("<h1>Twitter archive for <span class=\"archname\">"
+			."$archname</span></h1>\n");
+	}
+
+	function get_controls($page,$pages) {
+		$paging = "<span id=\"paging\">";
+		$params = get_params();
+
+		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
+
+		if($page > 2) {
+			$qs = qs_set_params(array("page" => 1));
+			$paging .= "<a href=\"$uri?$qs\" id=\"first_page\">|&lt;</a>";
+		} else {
+			$paging .= "|&lt;";
+		}
+
+
+		if($page > 1) {
+			$qs = qs_set_params(array("page" => $page - 1));
+			$paging .= " <a href=\"$uri?$qs\" id=\"prev_page\">&lt;</a>";
+		} else {
+			$paging .= " &lt;";
+		}
+
+		if($page < $pages) {
+		   $qs = qs_set_params(array("page" => $page + 1));	
+			$paging .= " <a href=\"$uri?$qs\" id=\"prev_page\">&gt;</a>";
+		} else {
+			$paging .= " &gt;";
+		}
+
+		if($page < $pages - 2) {
+			$qs = qs_set_params(array("page" => $pages));
+			$paging .= " <a href=\"$uri?$qs\" id=\"last_page\">&gt;|</a>";
+		} else {
+			$paging .= " &gt;|";
+		}
+
+		$paging .= "</span>";
+
+		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>";
+
+		$search = "<form method=\"get\" action=\"$uri\">\n"
+			."<input type=\"text\" size=\"20\" name=\"q\" "
+			."id=\"tsearch\" />\n<input type=\"submit\" value=\"Go\" />";
+
+
+
+		echo "$paging $numbering";
+	}
 	/**
 	* Mandataory argument $archive must be name of an existing archive.
 	*
@@ -50,6 +102,26 @@
 		}
 
 		return $tweets;
+	}
+
+	function get_num_tweets($archive,$criteria = array()) {
+		global $conn;
+		$sql = "select tid from tw_tweets where archive = '$archive' ";
+
+
+		foreach(array_keys($criteria) as $col) {
+			$op = $criteria[$col][0];
+			$val = $criteria[$col][1];
+			if($op == "like") {
+				$sql .= "and $col like '%$val%' ";
+			} else {
+				$sql .= "and $col $op '$val' ";
+			}
+		}
+
+		$conn->query($sql);
+
+		return $conn->affected_rows;
 	}
 
 	function format_tweet($tweet) {
@@ -187,26 +259,58 @@
 	}
 
 	function tweet_date_format($date) {
+		// TODO: fix issue with (v. recent) negative times!!!
 		$ts = strtotime($date);
-		$ago = time() - $ts;
-		switch(true) {
-			case ($ago <= 60):
-				return $ago."s";
-				break;
-			case ($ago <= 3600):
-				break;
-				return $ago."m";
-			case ($ago <= 86400):
-				return date("H:i",$ts);
-				break;
-			case (date("Y") != date("Y",$ts)):
-				return date("j M Y");
-				break;
-			default:
-				return date("j M",$ts);
+		$ago = time() - $ts; 
 
+		if($ago <= 60) {
+			return $ago."s";
+		} elseif($ago <= 3600) {
+			return floor($ago / 60)."m";
+		} elseif($ago <= 86400) {
+			return date("H:i",$ts);
+		} elseif(date("Y") != date("Y",$ts)) {
+			return date("j M Y",$ts);
 		}
 
-		return $now - $ts;
+		return date("j M",$ts);
+	}
+
+	function qs_get($params) {
+		$qs = "";
+
+		foreach($params as $param => $val) {
+			if($param == "archive") {
+				continue;
+			}
+			
+			$qs = "$qs&$param=$val";
+		}
+
+		return ltrim($qs,"&");
+	}
+
+	function qs_set_params($new_params) {
+		$params = get_params();
+
+		foreach($new_params as $param => $val) {
+			$params[$param] = $val;
+		}
+
+		return qs_get($params);
+	}
+
+	function get_params() {
+		$params = preg_split("/&/",$_SERVER['QUERY_STRING']);
+
+		$pout = array();
+
+		foreach($params as $param) {
+			$parts = preg_split('/=/',$param);
+
+			$pout[$parts[0]] = $parts[1];
+		}
+
+		return $pout;
 	}
 ?>
