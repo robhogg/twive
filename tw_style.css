@@ -1,0 +1,32 @@
+* {border: none; margin: 0px; padding: 0px; font-family: sans-serif}
+
+body {background-color: #ddddff}
+
+#header {width: 100%; height: 4em; background-color: #000080}
+#header h1 {color: #ffdddd}
+#archname {color: #ffdd99}
+
+#tweet-list {width: 80%; margin-left: auto; margin-right: auto;
+	border-width: 1px 4px 4px 1px; border-color: #808080; border-style: solid;
+}
+
+#list-controls {font-weight: bold; font-size: 1.4em;
+	width: 80%; margin-left: auto; margin-right: auto;
+	color: #ffdddd; background-color: #606060;
+	padding: 4px 4px 4px 1px;
+	margin-top: 1px #ddddff solid;
+}
+#list-controls a {
+	color: #ddddff; font-weight: bold; text-decoration: none;
+}
+#list-controls span {padding: 0px 0.25em}
+
+div.tweet {border-bottom: 1px #808080 dotted; 
+	padding: 0.5em 0.25em 0.25em 0.25em;
+	background: -moz-linear-gradient(top,#ffffff,#ddddff);
+	background: -webkit-linear-gradient(top,#ffffff,#ddddff);
+	background: -ms-linear-gradient(top,#ffffff,#ddddff);
+	background: -o-linear-gradient(top,#ffffff,#ddddff);
+	background: linear-gradient(top,#ffffff,#ddddff);
+}
+
