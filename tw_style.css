@@ -1,9 +1,10 @@
 * {border: none; margin: 0px; padding: 0px; font-family: sans-serif}
 
-body {background-color: #ddddff}
+body {background-color: #bbffdd}
 
-#header {width: 100%; height: 4em; background-color: #000080}
-#header h1 {color: #ffdddd}
+#header {width: 100%; height: 4em; background-color: #056010}
+#header h1 a {color: #ffffdd; text-decoration: none}
+#header h1 a:hover {text-decoration: underline}
 #archname {color: #ffdd99}
 
 #tweet-list {width: 80%; margin-left: auto; margin-right: auto;
@@ -13,8 +14,8 @@ body {background-color: #ddddff}
 #list-controls {font-weight: bold; font-size: 1.4em;
 	width: 80%; margin-left: auto; margin-right: auto;
 	color: #ffdddd; background-color: #606060;
-	padding: 4px 4px 4px 1px;
-	margin-top: 1px #ddddff solid;
+	padding: 4px 0px; border-width: 1px 4px 0px 1px;
+	border-color: #808080; border-style: solid;
 }
 #list-controls a {
 	color: #ddddff; font-weight: bold; text-decoration: none;
@@ -29,4 +30,6 @@ div.tweet {border-bottom: 1px #808080 dotted;
 	background: -o-linear-gradient(top,#ffffff,#ddddff);
 	background: linear-gradient(top,#ffffff,#ddddff);
 }
+
+#searchbar {display: inline}
 

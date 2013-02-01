@@ -3,9 +3,10 @@
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 	
-	function get_header($archname) {
-		echo("<h1>Twitter archive for <span class=\"archname\">"
-			."$archname</span></h1>\n");
+	function get_header($search) {
+		global $params;
+		echo("<h1><a href=\"/twive/".$params['archive']."\">Twitter archive for "
+			."<span class=\"archname\">$search</span></a></h1>\n");
 	}
 
 	function get_controls($page,$pages) {
@@ -43,17 +44,30 @@
 			$paging .= " &gt;|";
 		}
 
-		$paging .= "</span>";
+		$paging .= "</span>\n\n";
 
-		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>";
+		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>\n\n";
 
-		$search = "<form method=\"get\" action=\"$uri\">\n"
+		$search = "<form method=\"get\" action=\"$uri\" id=\"searchbar\">\n"
 			."<input type=\"text\" size=\"20\" name=\"q\" "
-			."id=\"tsearch\" />\n<input type=\"submit\" value=\"Go\" />";
+			."id=\"tsearch\" />\n<input type=\"submit\" value=\"Go\" />\n";
+
+		$params = get_params();
+
+		foreach($params as $param => $val) {
+			if($param == "archive" || $param == "q" || $param == "page") {
+				continue;
+			}
+			$search .= "<input type=\"hidden\" name=\"$param\" id=\"s_$param\" "
+				."value=\"$val\" />\n";
+		}
+
+		$search .= "</form>\n";
 
 
 
-		echo "$paging $numbering";
+		echo "$paging&nbsp;&nbsp;&nbsp;&nbsp;$numbering"
+			."&nbsp;&nbsp;&nbsp;&nbsp;$search";
 	}
 	/**
 	* Mandataory argument $archive must be name of an existing archive.
@@ -66,20 +80,13 @@
 	* returns array of tweet arrays
 	*/
 	function get_tweets($archive,$to = 0,$from = 0,$ord = "date-",
-		$criteria = array()) {
+		$criteria = "") {
 		global $conn;
 
-		$sql = "select * from tw_tweets where archive = '$archive' ";
-
-		foreach(array_keys($criteria) as $col) {
-			$op = $criteria[$col][0];
-			$val = $criteria[$col][1];
-			if($op == "like") {
-				$sql .= "and $col like '%$val%' ";
-			} else {
-				$sql .= "and $col $op '$val' ";
-			}
-		}
+		$sql = "select * from tw_tweets tw, tw_users us "
+			."where archive = '$archive' and tw.uid = us.uid ";
+			
+		$sql .= ($criteria == "")?"":"and $criteria ";
 
 		preg_match('/([a-zA-Z]+)([+-])/',$ord,$m);
 		$sql .= "order by ".$m[1]." ";
@@ -104,20 +111,14 @@
 		return $tweets;
 	}
 
-	function get_num_tweets($archive,$criteria = array()) {
+	function get_num_tweets($archive,$criteria = "") {
 		global $conn;
-		$sql = "select tid from tw_tweets where archive = '$archive' ";
+		$sql = "select tw.tid "
+			."from tw_tweets tw, tw_users us "
+			."where archive = '$archive' "
+			."and tw.uid = us.uid";
 
-
-		foreach(array_keys($criteria) as $col) {
-			$op = $criteria[$col][0];
-			$val = $criteria[$col][1];
-			if($op == "like") {
-				$sql .= "and $col like '%$val%' ";
-			} else {
-				$sql .= "and $col $op '$val' ";
-			}
-		}
+		$sql .= ($criteria == "")?"":" and $criteria";
 
 		$conn->query($sql);
 
@@ -312,5 +313,32 @@
 		}
 
 		return $pout;
+	}
+
+	function parse_params() {
+		global $conn;
+		$p = get_params();
+
+		$p['archive'] = (isset($p['archive']))?
+			$conn->real_escape_string($p['archive']):"";
+		$p['perpage'] = (isset($p['perpage']))?
+			$conn->real_escape_string($p['perpage']):25;
+		$p['page'] = (isset($p['page']))?
+			$conn->real_escape_string($p['page']):1;
+	
+		if(isset($p['q'])) {
+			$crit = $conn->real_escape_string($p['q']);
+			$p['crit'] = "(tw.text like '%$crit%' "
+				."or us.username like '%$crit%') ";
+		} 
+
+		$p['order'] = (isset($p['order']))?
+			$conn->real_escape_string($p['order']):"date";
+
+		$dir = (isset($p['dir']) && $p['dir'] == "asc")?'+':'-';
+		
+		$p['order'] .= $dir;			
+
+		return $p;
 	}
 ?>
