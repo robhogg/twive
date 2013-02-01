@@ -2,6 +2,16 @@
 	require("../../main_scripts/config.php");
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
+
+	$cfg = array(
+		'sorting' => array("date-" => "Newest first","date+" => "Oldest first",
+			"username+" => "Sender - A-Z", "username-" => "Sender - Z-A"),
+		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
+			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
+			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null),"chartp" => array("h|d","d"))
+	);
+
+	$params = parse_params();
 	
 	function get_header($search) {
 		global $params;
@@ -10,11 +20,14 @@
 	}
 
 	function get_controls($page,$pages) {
-		$paging = "<span id=\"paging\">";
+		global $cfg;
+
 		$params = get_params();
 
-		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
+		$paging = "<span id=\"paging\">";
 
+		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
+echo "<p>$uri</p>";
 		if($page > 2) {
 			$qs = qs_set_params(array("page" => 1));
 			$paging .= "<a href=\"$uri?$qs\" id=\"first_page\">|&lt;</a>";
@@ -37,7 +50,7 @@
 			$paging .= " &gt;";
 		}
 
-		if($page < $pages - 2) {
+		if($page < $pages - 1) {
 			$qs = qs_set_params(array("page" => $pages));
 			$paging .= " <a href=\"$uri?$qs\" id=\"last_page\">&gt;|</a>";
 		} else {
@@ -48,27 +61,58 @@
 
 		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>\n\n";
 
-		$search = "<form method=\"get\" action=\"$uri\" id=\"searchbar\">\n"
-			."<input type=\"text\" size=\"20\" name=\"q\" "
-			."id=\"tsearch\" />\n<input type=\"submit\" value=\"Go\" />\n";
+		$search = "<form method=\"get\" action=\"$uri\" id=\"searchbar\">\n";
+		
+		$sval = (isset($params['q']))?$params['q']:"";
+		
+		$search .= "<input type=\"text\" size=\"20\" name=\"q\" "
+			."id=\"tsearch\" value=\"$sval\" />\n";
 
-		$params = get_params();
-
-		foreach($params as $param => $val) {
-			if($param == "archive" || $param == "q" || $param == "page") {
-				continue;
-			}
-			$search .= "<input type=\"hidden\" name=\"$param\" id=\"s_$param\" "
-				."value=\"$val\" />\n";
+		$search .= "<select name=\"sort\" id=\"tsort\">\n";
+		foreach ($cfg['sorting'] as $val => $title) {
+			$sel = (isset($params['sort']) && urldecode($params['sort']) == $val)?
+				' selected="selected"':"";
+			$search .= "<option value=\"$val\"$sel>$title</option>\n";
 		}
+		$search .= "</select>\n";
+		
+		$search .= "<input type=\"submit\" value=\"Go\" />\n";
+		
+		if(isset($params['page']) && $params['page'] <= $pages) {
+			$search .= "<input type=\"hidden\" name=\"page\" "
+				."id=\"tpage\" value=\"".$params['page']."\" />\n";
+		} elseif(isset($params['page'])) {
+			$search .= "<input type=\"hidden\" name=\"page\" "
+				."id=\"tpage\" value=\"$pages\" />\n";
+		}
+
+		if(isset($params['perpage'])) {
+			$search .= "<input type=\"hidden\" name=\"perpage\" "
+				."id=\"tperpage\" value=\"".$params['perpage']."\" />\n";
+		}
+
+		foreach(array("page","perpage") as $retain) {
+			if(isset($params[$retain])) {
+				$search .= "<input type=\"hidden\" name=\"$retain\" "
+					."id=\"t$retain\" value=\"$params[$retain]\" />\n";
+			}
+		}
+
 
 		$search .= "</form>\n";
 
+		$unset = "";
 
+		if(isset($params['q']) && $params['q'] != "") {
+			$unset = "<a href=\"$uri?".qs_set_params(array("q" => ""))
+				."\">Clear search</a>";
+		}
 
-		echo "$paging&nbsp;&nbsp;&nbsp;&nbsp;$numbering"
-			."&nbsp;&nbsp;&nbsp;&nbsp;$search";
+		$sp = "&nbsp;&nbsp;&nbsp";
+		echo "$paging $sp $numbering $sp $unset $sp $search";
+
 	}
+
 	/**
 	* Mandataory argument $archive must be name of an existing archive.
 	*
@@ -295,7 +339,12 @@
 		$params = get_params();
 
 		foreach($new_params as $param => $val) {
-			$params[$param] = $val;
+			if($val == "") {
+				unset($params[$param]);
+			} else {
+				$params[$param] = $val;
+			}
+
 		}
 
 		return qs_get($params);
@@ -316,29 +365,22 @@
 	}
 
 	function parse_params() {
-		global $conn;
+		global $conn,$cfg;
 		$p = get_params();
+		$pout = array();
 
-		$p['archive'] = (isset($p['archive']))?
-			$conn->real_escape_string($p['archive']):"";
-		$p['perpage'] = (isset($p['perpage']))?
-			$conn->real_escape_string($p['perpage']):25;
-		$p['page'] = (isset($p['page']))?
-			$conn->real_escape_string($p['page']):1;
-	
-		if(isset($p['q'])) {
-			$crit = $conn->real_escape_string($p['q']);
-			$p['crit'] = "(tw.text like '%$crit%' "
-				."or us.username like '%$crit%') ";
-		} 
+		foreach($cfg['params'] as $param => $pset) {
+			if(isset($p[$param]) && 
+				preg_match('/'.$pset[0].'/',urldecode($p[$param]))) {
+				$pout[$param] = $conn->real_escape_string(urldecode($p[$param]));
+			} elseif(! is_null($pset[1])) {
+				$pout[$param] = $pset[1];
+			}
+		}
 
-		$p['order'] = (isset($p['order']))?
-			$conn->real_escape_string($p['order']):"date";
+		$pout['crit'] = ($pout['q'])?"(tw.text like '%".$pout['q']."%' "
+				."or us.username like '%".$pout['q']."%') ":"";
 
-		$dir = (isset($p['dir']) && $p['dir'] == "asc")?'+':'-';
-		
-		$p['order'] .= $dir;			
-
-		return $p;
+		return $pout;
 	}
 ?>

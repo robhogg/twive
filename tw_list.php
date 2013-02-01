@@ -9,14 +9,16 @@
 		exit(0);
 	}
 
-   $tweets = get_tweets($params['archive'],$params['perpage']
-		,($params['page'] - 1) * $params['perpage'],
-		$params['order'],$params['crit']);
 	$tw_num = get_num_tweets($params['archive'],$params['crit']); 
 
+	$pages = ceil($tw_num / $params['perpage']);
+	$page = ($params['page'] <= $pages)?$params['page']:$pages;
+
+   $tweets = get_tweets($params['archive'],$params['perpage']
+		,($page - 1) * $params['perpage'],$params['sort'],$params['crit']);
 	?>
 	<div id="list-controls">
-		<?php get_controls($params['page'],ceil($tw_num / $params['perpage'])); ?>
+		<?php get_controls($page,$pages); ?>
 	</div>
 	<div id="tweet-list">
 		<?php
@@ -29,4 +31,3 @@
 		}
 		?>
 	</div>
-?>
