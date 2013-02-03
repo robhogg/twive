@@ -8,7 +8,7 @@
 			"username+" => "Sender - A-Z", "username-" => "Sender - Z-A"),
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
-			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null),"chartp" => array("h|d","d"))
+			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null))
 	);
 
 	$params = parse_params();
@@ -27,7 +27,7 @@
 		$paging = "<span id=\"paging\">";
 
 		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
-echo "<p>$uri</p>";
+
 		if($page > 2) {
 			$qs = qs_set_params(array("page" => 1));
 			$paging .= "<a href=\"$uri?$qs\" id=\"first_page\">|&lt;</a>";
@@ -108,8 +108,16 @@ echo "<p>$uri</p>";
 				."\">Clear search</a>";
 		}
 
-		$sp = "&nbsp;&nbsp;&nbsp";
-		echo "$paging $sp $numbering $sp $unset $sp $search";
+		if(isset($params["chart"])) {
+			$qs = qs_set_params(array("chart" => ""));
+			$chart = "<a href=\"$uri?$qs\">Hide&nbsp;Chart</a>";
+		} else {
+			$qs = qs_set_params(array("chart" => "week"));
+			$chart = "<a href=\"$uri?$qs\">Show&nbsp;Chart</a>";
+		}
+
+		$sp = "&nbsp;&nbsp;&nbsp;";
+		echo "$paging $sp $numbering $sp $unset $sp $search $sp $chart";
 
 	}
 
@@ -167,6 +175,59 @@ echo "<p>$uri</p>";
 		$conn->query($sql);
 
 		return $conn->affected_rows;
+	}
+
+	// TODO: add different chart options
+	function get_chart_data($archive,$type,$from,$to,$crit) {
+		global $conn;
+
+		$sql = "select date_format(date,'%Y-%m-%d %p') as label, count(*) as num "
+			."from tw_tweets tw, tw_users us where tw.uid = us.uid and "
+			."date between '$from' and '$to' ";
+		
+		$sql .= ($crit != "")?" and $crit ":" ";
+			
+		$sql .= "group by label order by label";
+
+		$res = $conn->query($sql);
+
+		$data = array();
+		$max = 0;
+		while($row = $res->fetch_assoc()) {
+			array_push($data,$row);
+			$max = ($max < $row['num'])?$row['num']:$max;
+		}
+
+		array_push($data,array("max" => $max));
+
+		return $data;
+	}
+
+	// TODO: investigate proper graphic library
+	function draw_chart($data) {
+		$params = array_pop($data);
+		$col_width = 100 / count($data);
+
+		$values = "";
+		$labels = "";
+		$chart = "";
+		foreach($data as $datum) {
+			$values .= "<div class=\"chart_values\" style=\"width: "
+				."$col_width%\">".$datum['num']."</div>\n";
+			$labl = preg_replace("/([0-9]{4})-([0-9]{2})-([0-9]{2}) (AM|PM)/",
+				'$3/$2<br />$4',$datum['label']);
+			$labels .= "<div class=\"chart_label\" style=\"width: "
+				."$col_width%\">$labl</div>\n";
+			// "out of 101" because a div with height 0 has width 0
+			$col_height = 101 - (100 / $params['max']) * $datum['num'];
+			$chart .= "<div id=\"bar-".$datum['label']."-".$datum['num']."\" "
+				."class=\"chart_bar\" style=\"width: "
+				."$col_width%; height: $col_height%\">&nbsp;</div>\n";
+		}
+
+		return "<div id=\"chart_values\">\n$values\n</div>\n"
+			."<div id=\"chart_pane\">\n$chart\n</div>\n"
+			."<div id=\"chart_labels\">\n$labels\n</div>\n";
 	}
 
 	function format_tweet($tweet) {
@@ -329,10 +390,10 @@ echo "<p>$uri</p>";
 				continue;
 			}
 			
-			$qs = "$qs&$param=$val";
+			$qs = "$qs&amp;$param=$val";
 		}
 
-		return ltrim($qs,"&");
+		return preg_replace('/^&amp;/','',$qs);
 	}
 
 	function qs_set_params($new_params) {

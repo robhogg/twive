@@ -9,6 +9,7 @@ body {background-color: #bbffdd}
 
 #tweet-list {width: 80%; margin-left: auto; margin-right: auto;
 	border-width: 1px 4px 4px 1px; border-color: #808080; border-style: solid;
+	clear: both
 }
 
 #list-controls {font-weight: bold; font-size: 1.4em;
@@ -33,3 +34,12 @@ div.tweet {border-bottom: 1px #808080 dotted;
 
 #searchbar {display: inline}
 
+
+/* Chart */
+#chart {width: 80%; margin-left: auto; margin-right: auto}
+.chart_bar {float: left; background-color: #bbffdd}
+.chart_label {;float: left}
+.chart_values {float: left}
+#chart_pane {height: 200px; background-color: #056010; clear: both}
+#chart_values {clear: both}
+#chart_labels {clear: both}

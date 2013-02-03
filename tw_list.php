@@ -20,6 +20,9 @@
 	<div id="list-controls">
 		<?php get_controls($page,$pages); ?>
 	</div>
+	<div id="chart">
+		<?php include("tw_chart.php"); ?>
+	</div>
 	<div id="tweet-list">
 		<?php
 		$count = 0;
