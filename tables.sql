@@ -20,6 +20,11 @@
 create table tw_archive (
 name varchar(12),
 search varchar(255),
+created datetime,
+user varchar(12),
+private tinyint(1) default 0,
+last_updated datetime,
+update_interval int,
 primary key (name)
 );
 
