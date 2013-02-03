@@ -1,5 +1,5 @@
 <?php
-	require("twitlib.php");
+	require("tw_lib.php");
 
 	$opts = getopt("m:n:s:h");
 

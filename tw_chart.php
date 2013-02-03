@@ -1,5 +1,5 @@
 <?php
-	require_once("twitlib.php");
+	require_once("tw_lib.php");
 
 	if(! isset($params['archive'])) {
 		$params = parse_params();

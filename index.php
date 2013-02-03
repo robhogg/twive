@@ -1,5 +1,5 @@
 <?php
-	require("twitlib.php");
+	require("tw_lib.php");
    $Index = true;	
 
 	$params = parse_params();

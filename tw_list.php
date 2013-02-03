@@ -1,5 +1,5 @@
 <?php
-	require_once("twitlib.php");
+	require_once("tw_lib.php");
 
 	$params = parse_params();
 
