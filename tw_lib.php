@@ -1,5 +1,5 @@
 <?php
-	require("../../main_scripts/config.php");
+	require("config.php");
 
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 
