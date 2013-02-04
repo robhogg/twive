@@ -277,7 +277,8 @@
 			$stat['median_users'] = ($r1["num"] + $r2["num"]) / 2;
 		} else {
 			$res->data_seek(ceil($stat['num_users'] / 2));
-			$stat['median_users'] = $res->fetch_assoc();
+			$r = $res->fetch_assoc();
+			$stat['median_users'] = $r["num"];
 		}
 
 		$res = $conn->query($top10_sql);
