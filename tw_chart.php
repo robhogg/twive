@@ -24,8 +24,13 @@
 		$params = parse_params();
 	}
 
-	$params['chartfrom'] = date("Y-m-d H:i:s", time() - (156 * 3600)); 
-	$params['chartto'] = date("Y-m-d H:i:s");
+	if(date("H") >= 12) {
+		$params['chartfrom'] = date("Y-m-d 00:00:00", time() - (156 * 3600)); 
+		$params['chartto'] = date("Y-m-d 23:59:59");
+	} else {
+		$params['chartfrom'] = date("Y-m-d 12:00:00", time() - (156 * 3600)); 
+		$params['chartto'] = date("Y-m-d 11:59:59");
+	}
 
 	if(isset($params['chart']) && $params['chart'] != "") {
 		$data = get_chart_data($params['archive'],$params['chart'],
