@@ -1,4 +1,4 @@
-*/
+/*
 * Copyright Rob Hardy 2013 (https://github.com/robhogg/twive)
 *
 * This file is part of Twive
