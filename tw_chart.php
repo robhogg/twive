@@ -23,7 +23,6 @@
 	if(! isset($params['archive'])) {
 		$params = parse_params();
 	}
-
 	if(date("H") >= 12) {
 		$params['chartfrom'] = date("Y-m-d 00:00:00", time() - (156 * 3600)); 
 		$params['chartto'] = date("Y-m-d 23:59:59");
@@ -37,5 +36,7 @@
 			$params['chartfrom'],$params['chartto'],$params['crit']);
 
 		echo draw_chart($data);
+	} elseif(isset($params['stats'])) {
+		show_stats($params['archive'],$params['q']);
 	}
 ?>

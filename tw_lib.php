@@ -23,11 +23,13 @@
 	$conn = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
 
 	$cfg = array(
+		'tables' => array("tw_tweets" => "tw", "tw_users" => us,
+			"tw_archive" => "ar"),
 		'sorting' => array("date-" => "Newest first","date+" => "Oldest first",
 			"username+" => "Sender - A-Z", "username-" => "Sender - Z-A"),
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
-			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null))
+			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null),"stats" => array("show",null))
 	);
 
 	$params = parse_params();
@@ -89,7 +91,7 @@
 
 		$search .= "<select name=\"sort\" id=\"tsort\">\n";
 		foreach ($cfg['sorting'] as $val => $title) {
-			$sel = (isset($params['sort']) && urldecode($params['sort']) == $val)?
+			$sel = (isset($params['sort']) && $params['sort'] == $val)?
 				' selected="selected"':"";
 			$search .= "<option value=\"$val\"$sel>$title</option>\n";
 		}
@@ -131,12 +133,21 @@
 			$qs = qs_set_params(array("chart" => ""));
 			$chart = "<a href=\"$uri?$qs\">Hide&nbsp;Chart</a>";
 		} else {
-			$qs = qs_set_params(array("chart" => "week"));
+			$qs = qs_set_params(array("chart" => "week","stats" => ""));
 			$chart = "<a href=\"$uri?$qs\">Show&nbsp;Chart</a>";
 		}
 
+		if(isset($params["stats"])) {
+			$qs = qs_set_params(array("stats" => ""));
+			$stats = "<a href=\"$uri?$qs\">Hide&nbsp;Stats</a>";
+		} else {
+			$qs = qs_set_params(array("stats" => "show","chart" => ""));
+			$stats = "<a href=\"$uri?$qs\">Show&nbsp;Stats</a>";
+		}
+
 		$sp = "&nbsp;&nbsp;&nbsp;";
-		echo "$paging $sp $numbering $sp $unset $sp $search $sp $chart";
+		echo "<div id=\"controls1\">$paging $sp $numbering $sp $search</div>"
+			."<div id=\"controls2\">$chart $sp $stats $sp $unset</div>";
 
 	}
 
@@ -156,7 +167,7 @@
 
 		$sql = "select * from tw_tweets tw, tw_users us "
 			."where archive = '$archive' and tw.uid = us.uid ";
-			
+
 		$sql .= ($criteria == "")?"":"and $criteria ";
 
 		preg_match('/([a-zA-Z]+)([+-])/',$ord,$m);
@@ -194,6 +205,129 @@
 		$conn->query($sql);
 
 		return $conn->affected_rows;
+	}
+
+	/*
+	* Returns basic stats for archive. One mandatory parameter (archive name)
+	* (and one optional - the query string, though stats for a particular
+	* search is still TODO);
+	*/
+	function get_stats($archive,$q = "") {
+		global $conn;
+
+		if($q == "") {
+			$stat['title'] = "Summary stats for $archive";
+		} else {
+			$stat['title'] = "Stats for current search in $archive";
+			$t_crit = "and ".parse_search($q,"tw_tweets");
+			$u_crit = "and ".parse_search($q,"tw_users");
+			$crit = "and ".parse_search($q);
+		}
+
+		$total_sql = "select count(*) as num from tw_tweets tw where "
+			."tw.archive = '$archive' $t_crit";
+		$perday_sql = "select count(*) as num from tw_tweets tw where "
+			."tw.archive = '$archive' group by date_format(date,'%Y-%m-%d') "
+			."order by count(*)";
+		$users_sql = "select count(distinct tw.uid) as num "
+			."from tw_tweets tw, tw_users us where tw.uid = us.uid " 
+			."and tw.archive = '$archive' $t_crit $u_crit";
+		$peruser_sql = "select count(*) as num from tw_tweets tw where "
+			."tw.archive = '$archive' group by uid "
+			."order by count(*)";
+		$top10_sql = "select us.username as name, tw.uid as id, "
+			."count(*) as num from tw_tweets tw, tw_users us "
+			."where tw.uid = us.uid and tw.archive = '$archive' $crit "
+			."group by name order by num desc limit 10";
+		$earliest_sql = "select date,tid as tweet from tw_tweets tw where "
+			."date = (select min(date) from tw_tweets sub where "
+			."sub.archive = '$archive' $t_crit) order by tid";
+		$latest_sql = "select date,tid as tweet from tw_tweets tw where "
+			."date = (select max(date) from tw_tweets sub where "
+			."sub.archive = '$archive' $t_crit) order by tid desc";
+		
+		$res = $conn->query($total_sql);
+		$row = $res->fetch_assoc();
+		$stat["num_tweets"] = $row['num'];
+
+		$res = $conn->query($perday_sql);
+		$num_days = $conn->affected_rows;
+		if($num_days % 2 == 0) {
+			$res->data_seek($num_days / 2 - 1);
+			$r1 = $res->fetch_assoc();
+			$r2 = $res->fetch_assoc();
+
+			$stat['median_tweets'] = ($r1["num"] + $r2["num"]) / 2;
+		} else {
+			$res->data_seek(floor($num_days / 2));
+			$r = $res->fetch_assoc();
+			$stat['median_tweets'] = $r["num"]; 
+		}
+
+		$res = $conn->query($users_sql);
+		$row = $res->fetch_assoc();
+		$stat["num_users"] = $row['num'];
+
+		$res = $conn->query($peruser_sql);
+		if($stat['num_users'] % 2 == 0) {
+			$res->data_seek($stat['num_users'] / 2 - 1);
+			$r1 = $res->fetch_assoc();
+			$r2 = $res->fetch_assoc();
+
+			$stat['median_users'] = ($r1["num"] + $r2["num"]) / 2;
+		} else {
+			$res->data_seek(ceil($stat['num_users'] / 2));
+			$stat['median_users'] = $res->fetch_assoc();
+		}
+
+		$res = $conn->query($top10_sql);
+		$stat["top10"] = array();
+		while($row = $res->fetch_assoc()) {
+			array_push($stat["top10"],$row);
+		}
+
+		$res = $conn->query($earliest_sql);
+		$stat["earliest"] = $res->fetch_assoc();
+		$res = $conn->query($latest_sql);
+		$stat["latest"] = $res->fetch_assoc();
+		
+		$stat["period"] = strtotime($stat['latest']['date']) - 
+			strtotime($stat['earliest']['date']);
+
+		return $stat;
+	}
+
+	function show_stats($archive,$q = "") {
+		$stats = get_stats($archive);
+
+		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
+		?>
+			<h2><?php echo $stats['title']; ?></h2>
+			<ul id="archive_stats">
+				<li><strong>Total tweets: </strong><?php 
+					echo $stats['num_tweets']; ?></li>
+				<li><strong>Users in archive: </strong><?php 
+					echo $stats['num_users']; ?></li>
+				<li><strong>Max tweets by user: </strong><?php 
+					echo $stats['top10'][0]["num"]; ?></li>
+				<li><strong>Median tweets per user: </strong><?php 
+					echo $stats['median_users']; ?></li>
+				<li><strong>First tweet: </strong><?php 
+					echo  date("D M, Y H:i:s",
+						strtotime($stats['earliest']['date']));?></li>
+				<li><strong>Latest tweet: </strong><?php 
+					echo date("D M, Y H:i:s",
+						strtotime($stats['latest']['date']));?></li>
+				<li><strong>Total period: </strong><?php 
+						echo round($stats['period'] / 86400, 1); ?> days</li>
+				<li><strong>Mean tweets per day: </strong><?php 
+					echo round($stats['num_tweets'] * 86400 / $stats['period'],
+						1); ?></li>
+				<li><strong>Median tweets per day: </strong><?php 
+					echo $stats['median_tweets']; ?></li>
+			</ul>
+		<?php
+
 	}
 
 	// TODO: add different chart options
@@ -438,10 +572,40 @@
 		foreach($params as $param) {
 			$parts = preg_split('/=/',$param);
 
-			$pout[$parts[0]] = $parts[1];
+			$pout[$parts[0]] = urldecode($parts[1]);
 		}
 
 		return $pout;
+	}
+
+	/*
+	* parse query and return SQL
+	*
+	* if parameter $table is set, returns only criteria for that table,
+	* otherwise, returns search for terms in tw_users or tw_tweets
+	*
+	* TODO: search options/intelligence
+	*/
+	function parse_search($search,$table="") {
+		global $cfg;
+
+		$search = trim($search);
+
+		if(preg_match('/^(user:)([^ ]*)/',$search,$matches)) {
+			return 'us.username = "'.$matches[2].'"';
+		}
+
+		$t_search = "tw.text like '%$search%'";
+
+		$u_search = "us.username like '%$search%'";
+
+		if($table == "tw_users") {
+			return $u_search;
+		} elseif($table == "tw_tweets") {
+			return $t_search;
+		}
+
+		return "($t_search or $u_search)";
 	}
 
 	function parse_params() {
@@ -451,15 +615,14 @@
 
 		foreach($cfg['params'] as $param => $pset) {
 			if(isset($p[$param]) && 
-				preg_match('/'.$pset[0].'/',urldecode($p[$param]))) {
-				$pout[$param] = $conn->real_escape_string(urldecode($p[$param]));
+				preg_match('/'.$pset[0].'/',$p[$param])) {
+				$pout[$param] = $conn->real_escape_string($p[$param]);
 			} elseif(! is_null($pset[1])) {
 				$pout[$param] = $pset[1];
 			}
 		}
 
-		$pout['crit'] = ($pout['q'])?"(tw.text like '%".$pout['q']."%' "
-				."or us.username like '%".$pout['q']."%') ":"";
+		$pout['crit'] = ($pout['q'] == "")?"":parse_search($pout['q']);
 
 		return $pout;
 	}

@@ -57,8 +57,10 @@ div.tweet {border-bottom: 1px #808080 dotted;
 /* Chart */
 #chart {width: 80%; margin-left: auto; margin-right: auto}
 .chart_bar {float: left; background-color: #bbffdd}
-.chart_label {;float: left}
+.chart_label {float: left}
 .chart_values {float: left}
 #chart_pane {height: 200px; background-color: #056010; clear: both}
 #chart_values {clear: both}
 #chart_labels {clear: both}
+#chart ul {margin: 5% 0% 5% 10%}
+#chart ul li {font-size: large}
