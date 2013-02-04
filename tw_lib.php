@@ -544,7 +544,7 @@
 				continue;
 			}
 			
-			$qs = "$qs&amp;$param=$val";
+			$qs = "$qs&amp;$param=".urlencode($val);
 		}
 
 		return preg_replace('/^&amp;/','',$qs);
