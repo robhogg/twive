@@ -336,8 +336,8 @@
 		global $conn;
 
 		$sql = "select date_format(date,'%Y-%m-%d %p') as label, count(*) as num "
-			."from tw_tweets tw, tw_users us where tw.uid = us.uid and "
-			."date between '$from' and '$to' ";
+			."from tw_tweets tw, tw_users us where archive = '$archive' and "
+			."tw.uid = us.uid and date between '$from' and '$to' ";
 		
 		$sql .= ($crit != "")?" and $crit ":" ";
 			
@@ -360,6 +360,11 @@
 	// TODO: investigate proper graphic library
 	function draw_chart($data) {
 		$params = array_pop($data);
+
+		if(count($data) == 0) {
+			return "<h2>No chart data for period</h2>";
+		}
+		
 		$col_width = 100 / count($data);
 
 		$values = "";
@@ -470,7 +475,10 @@
 		$tid = $conn->real_escape_string($tweet->id_str);
 		$uid = $conn->real_escape_string($tweet->from_user_id_str);
 
-		$tcheck = $conn->query("select tid from tw_tweets where tid = '$tid'");
+		$tcheck_sql = "select tid from tw_tweets where tid = '$tid' "
+			."and archive = '$archive'";
+
+		$tcheck = $conn->query($tcheck_sql);
 
 		if($conn->affected_rows == 0) {
 			add_user($uid,$tweet->from_user,$tweet->from_user_name,
