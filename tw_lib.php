@@ -314,10 +314,10 @@
 				<li><strong>Median tweets per user: </strong><?php 
 					echo $stats['median_users']; ?></li>
 				<li><strong>First tweet: </strong><?php 
-					echo  date("D M, Y H:i:s",
+					echo  date("j M, Y H:i:s",
 						strtotime($stats['earliest']['date']));?></li>
 				<li><strong>Latest tweet: </strong><?php 
-					echo date("D M, Y H:i:s",
+					echo date("j M, Y H:i:s",
 						strtotime($stats['latest']['date']));?></li>
 				<li><strong>Total period: </strong><?php 
 						echo round($stats['period'] / 86400, 1); ?> days</li>
