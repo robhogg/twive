@@ -20,7 +20,7 @@
 
 	require("tw_lib.php");
 
-	$opts = getopt("m:n:s:h");
+	$opts = getopt("b::m:n:s:h");
 
 	if(isset($opts[h])) {
 		usage($argv[0]);
@@ -30,6 +30,12 @@
 	$since = (isset($opts[s]) && is_numeric($opts[s]))?$opts[s]:0;
 	$max = (isset($opts[m]) && is_numeric($opts[m]))?$opts[m]:0;
 	$num = (isset($opts[n]) && is_numeric($opts[n]))?$opts[n]:15;
+	$bulk = "";
+	if(isset($opts['b']) && $opts['b'] == '+') {
+		$bulk = '+';
+	} elseif (isset($opts['b'])) {
+		$bulk = '-';
+	}
 
 	$archname = array_pop($argv);
 
@@ -43,39 +49,85 @@
 	}
 
 	echo("=== Starting at ".date("Y-m-d H:i:s")."\n");
-	echo("Retrieving tweets for $archname\n");
-	$tweets = harvest_tweets($archive['search'],$num,$since,$max);
-	echo(count($tweets->results)." retrieved. Updating archive\n\n");
-	
-	$archived = 0;
-	$already = 0;
-	$fails = 0;
-	foreach($tweets->results as $i => $tweet) {
-		$res = save_tweet($tweet,$archname);
+	if($bulk == "+") {
+		echo("Operating in \"later tweets\" bulk update mode.\n");
+
+		$archived = 1;
+		$count = 0;
+		while($archived > 0) {
+			$stats = get_stats($archname);
+			$since = $stats['latest']['tweet'];
+			$results = retrieve_tweets($archive,$num,$since,$max);
+
+			output_results($results,$archname);
+			$archived = $results['archived'];
+			$count += $archived;
+			sleep(30);
+		}
 		
-		switch($res) {
-			case 0:
-				$fails += 1;
-				break;
-			case 1:
-				$archived += 1;
-				break;
-			case -1:
-				$already += 1;
-				break;
+		echo("Archived total: $count");
+	} elseif($bulk == "-") {
+		echo("Operating in bulk update mode.\n");
+
+		$archived = 1;
+		$count = 0;
+		while($archived > 0) {
+			$stats = get_stats($archname);
+			$max = ($stats['earliest']['tweet'])?$stats['earliest']['tweet']:0;
+			$results = retrieve_tweets($archive,$num,$since,$max);
+
+			output_results($results,$archname);
+			$archived = $results['archived'];
+			$count += $archived;
+			sleep(30);
+		}
+		
+		echo("Archived total: $count");
+	} else {
+		echo("Operating in update mode.\n");
+		$results = retrieve_tweets($archive,$num,$since,$max);
+
+		output_results($results,$archname);
+	}
+	echo("=== Finished at ".date("Y-m-d H:i:s")."\n\n");
+
+	exit(0);
+
+	function retrieve_tweets($archive,$num,$since,$max) {
+		echo("Retrieving tweets for ".$archive['name']."\n");
+		$tweets = harvest_tweets($archive['search'],$num,$since,$max);
+		echo(count($tweets->results)." retrieved. Updating archive\n\n");
+		
+		$results = array('archived' => 0, 'already' => 0, 'fails' => 0);
+		foreach($tweets->results as $i => $tweet) {
+			$res = save_tweet($tweet,$archive['name']);
+
+			switch($res) {
+				case 0:
+					$results['fails'] += 1;
+					break;
+				case 1:
+					$results['archived'] += 1;
+					break;
+				case -1:
+					$results['already'] += 1;
+					break;
+			}
+
 		}
 
+		return $results;
 	}
 
-	echo("Added to $archname: $archived\n"
-		."Already in $archname: $already\n"
-		."Failures: $fails\n");
+	function output_results($results,$archname) {
+		echo("Added to $archname: ".$results['archived']."\n"
+			."Already in $archname: ".$results['already']."\n"
+			."Failures: ".$results['fails']."\n");
 
-	if($archived + $already > 0) {
-		archive_updated($archname);
+		if($archived + $already > 0) {
+			archive_updated($archname);
+		}
 	}
-
-	echo("=== Finished at ".date("Y-m-d H:i:s")."\n\n");
 
 	function usage($scriptname) {
 		echo("Usage: $scriptname [-s id] [-m id] [-num n] [-h] archive\n"
@@ -83,6 +135,9 @@
 			."\t-s id - since_id parameter for the twitter search\n"
 			."\t-m id - max_id parameter for the twitter search\n"
 			."\t-n num - number of tweets to fetch (default 15)\n"
+			."\t-b [+] - bulk update mode - get all tweets available\n"
+			."\t\tfor search. With + works up from latest tweet in\n"
+			."\t\tarchive\n"
 			."\t-h - output this help information\n\n");
 	}
 ?>
