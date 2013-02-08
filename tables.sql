@@ -19,30 +19,37 @@
 
 create table tw_archive (
 name varchar(12),
-search varchar(255),
-created datetime,
-user varchar(12),
+description varchar(255) default "",
+search varchar(255) not null,
+created datetime default '1970-01-01 00:00:00',
+user varchar(12) default "",
 private tinyint(1) default 0,
-last_updated datetime,
-update_interval int,
+last_updated datetime default null,
+update_interval int default 60,
 primary key (name)
 );
 
 create table tw_users (
 uid varchar(12),
-username varchar(20),
-name varchar(60),
-image varchar(255),
+username varchar(20) not null,
+name varchar(60) default "",
+image varchar(255) default "",
+role int default 2,
 primary key (uid)
 );
 
 create table tw_tweets (
 tid varchar(21),
 uid varchar(12),
-archive varchar(12),
 text varchar(200),
 date datetime,
 reply_tweet varchar(21),
 reply_user varchar(12),
 primary key (tid)
+);
+
+create table tw_archive_link (
+archive varchar(12),
+tid varchar(21),
+primary key (archive,tid)
 );

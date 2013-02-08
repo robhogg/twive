@@ -165,8 +165,9 @@
 		$criteria = "") {
 		global $conn;
 
-		$sql = "select * from tw_tweets tw, tw_users us "
-			."where archive = '$archive' and tw.uid = us.uid ";
+		$sql = "select tw.*,us.username from tw_tweets tw, tw_users us, "
+			."tw_archive_link al where tw.uid = us.uid and tw.tid = al.tid "
+			."and al.archive = '$archive' ";
 
 		$sql .= ($criteria == "")?"":"and $criteria ";
 
@@ -196,9 +197,9 @@
 	function get_num_tweets($archive,$criteria = "") {
 		global $conn;
 		$sql = "select tw.tid "
-			."from tw_tweets tw, tw_users us "
-			."where archive = '$archive' "
-			."and tw.uid = us.uid";
+			."from tw_tweets tw, tw_users us, tw_archive_link al "
+			."where tw.uid = us.uid and tw.tid = al.tid "
+			."and al.archive = '$archive' ";
 
 		$sql .= ($criteria == "")?"":" and $criteria";
 
@@ -224,27 +225,27 @@
 			$crit = "and ".parse_search($q);
 		}
 
-		$total_sql = "select count(*) as num from tw_tweets tw where "
-			."tw.archive = '$archive' $t_crit";
-		$perday_sql = "select count(*) as num from tw_tweets tw where "
-			."tw.archive = '$archive' group by date_format(date,'%Y-%m-%d') "
+		$total_sql = "select count(*) as num from tw_tweets tw, tw_archive_link al where "
+			."tw.tid = al.tid and al.archive = '$archive' $t_crit";
+		$perday_sql = "select count(*) as num from tw_tweets tw, tw_archive_link al where "
+			."tw.tid = al.tid and al.archive = '$archive' group by date_format(date,'%Y-%m-%d') "
 			."order by count(*)";
 		$users_sql = "select count(distinct tw.uid) as num "
-			."from tw_tweets tw, tw_users us where tw.uid = us.uid " 
-			."and tw.archive = '$archive' $t_crit $u_crit";
-		$peruser_sql = "select count(*) as num from tw_tweets tw where "
-			."tw.archive = '$archive' group by uid "
+			."from tw_tweets tw, tw_users us, tw_archive_link al where tw.uid = us.uid " 
+			."and tw.tid = al.tid and al.archive = '$archive' $t_crit $u_crit";
+		$peruser_sql = "select count(*) as num from tw_tweets tw, tw_archive_link al where "
+			."tw.tid = al.tid and al.archive = '$archive' group by uid "
 			."order by count(*)";
 		$top10_sql = "select us.username as name, tw.uid as id, "
-			."count(*) as num from tw_tweets tw, tw_users us "
-			."where tw.uid = us.uid and tw.archive = '$archive' $crit "
+			."count(*) as num from tw_tweets tw, tw_users us, tw_archive_link al "
+			."where tw.uid = us.uid and tw.tid = al.tid and al.archive = '$archive' $crit "
 			."group by name order by num desc limit 10";
 		$earliest_sql = "select date,tid as tweet from tw_tweets tw where "
-			."date = (select min(date) from tw_tweets sub where "
-			."sub.archive = '$archive' $t_crit) order by tid";
+			."date = (select min(date) from tw_tweets sub, tw_archive_link al where "
+			."sub.tid = al.tid and al.archive = '$archive' $t_crit) order by tid";
 		$latest_sql = "select date,tid as tweet from tw_tweets tw where "
-			."date = (select max(date) from tw_tweets sub where "
-			."sub.archive = '$archive' $t_crit) order by tid desc";
+			."date = (select max(date) from tw_tweets sub, tw_archive_link al where "
+			."sub.tid = al.tid and al.archive = '$archive' $t_crit) order by tid desc";
 		
 		$res = $conn->query($total_sql);
 		$row = $res->fetch_assoc();
@@ -336,7 +337,8 @@
 		global $conn;
 
 		$sql = "select date_format(date,'%Y-%m-%d %p') as label, count(*) as num "
-			."from tw_tweets tw, tw_users us where archive = '$archive' and "
+			."from tw_tweets tw, tw_users us, tw_archive_link al "
+			."where tw.tid = al.tid and al.archive = '$archive' and "
 			."tw.uid = us.uid and date between '$from' and '$to' ";
 		
 		$sql .= ($crit != "")?" and $crit ":" ";
@@ -390,11 +392,8 @@
 	}
 
 	function format_tweet($tweet) {
-		$auth = get_author($tweet['uid']);
-
-
-		$authlink = '<a href="http://twitter.com/'.$auth['username'].'" '
-			.'class="tweet-auth">'.$auth['username'].':</a>';
+		$authlink = '<a href="http://twitter.com/'.$tweet['username'].'" '
+			.'class="tweet-auth">'.$tweet['username'].':</a>';
 		
 		$text = preg_replace('/(https?:\/\/[^ ]*)/',
 			"<a href=\"$1\" class=\"tweet-link\">$1</a>",
@@ -469,14 +468,22 @@
 		return $details->fetch_assoc();
 	}
 
+	/*
+	* Insert tweet data into tw_tweets and/or link into tw_archive_link
+	*
+	* $tweet is Twitter result object, $archive is string.
+	*
+	* Returns 1 on success, -1 if tweet and link already stored, 0 on error.
+	*/
 	function save_tweet($tweet,$archive) {
 		global $conn;
 
 		$tid = $conn->real_escape_string($tweet->id_str);
 		$uid = $conn->real_escape_string($tweet->from_user_id_str);
 
-		$tcheck_sql = "select tid from tw_tweets where tid = '$tid' "
-			."and archive = '$archive'";
+		$rval = -1;
+
+		$tcheck_sql = "select tid from tw_tweets where tid = '$tid'";
 
 		$tcheck = $conn->query($tcheck_sql);
 
@@ -495,13 +502,34 @@
 				$tweet->to_user_id_str);
 			
 			$conn->query("insert into tw_tweets values ("
-				."'$tid','$uid','$archive','$text','$date',"
+				."'$tid','$uid','$text','$date',"
 				."'$reply_tweet','$reply_user')");
 			
-			return $conn->affected_rows;
-		} else {
-			return -1;
+			if($conn->error == "") {
+				$rval = 1;
+			} else {
+				error_log("Error writing $tid to tw_tweets: ".$conn->error);
+				return 0;
+			}
 		}
+
+		$lcheck_sql = "select tid from tw_archive_link where tid = '$tid' "
+			."and archive = '$archive'";
+
+		$lcheck = $conn->query($lcheck_sql);
+
+		if($conn->affected_rows == 0) {
+			$conn->query("insert into tw_archive_link values ('$archive','$tid')");
+
+			if($conn->error == "") {
+				$rval = 1;
+			} else {
+				error_log("Error writing $archive, $tid to tw_archive_link: ".$conn->error);
+				return 0;
+			}
+		}
+
+		return $rval;
 
 	}
 
@@ -521,8 +549,8 @@
 			$name = $conn->real_escape_string($name);
 			$image = $conn->real_escape_string($image);
 			
-			$conn->query("insert into tw_users values ('$uid','$username',"
-				."'$name','$image')");
+			$conn->query("insert into tw_users (uid,username,name,image) "
+				."values ('$uid','$username','$name','$image')");
 		}
 	}
 
