@@ -36,7 +36,7 @@
    $tweets = get_tweets($params['archive'],$params['perpage']
 		,($page - 1) * $params['perpage'],$params['sort'],$params['crit']);
 	?>
-	<div id="list-controls">
+	<div class="list-controls">
 		<?php get_controls($page,$pages); ?>
 	</div>
 	<div id="chart">
@@ -52,4 +52,7 @@
 			$count += 1;
 		}
 		?>
+	</div>
+	<div class="list-controls">
+		<?php get_controls($page,$pages,0); ?>
 	</div>

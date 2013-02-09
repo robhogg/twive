@@ -26,21 +26,25 @@ body {background-color: #bbffdd}
 #header h1 a:hover {text-decoration: underline}
 #archname {color: #ffdd99}
 
+#footer {margin: 20px 0px 10px 0px; text-align: center}
+#footer p {text-align: center}
+
 #tweet-list {width: 80%; margin-left: auto; margin-right: auto;
-	border-width: 1px 4px 4px 1px; border-color: #808080; border-style: solid;
+	border-width: 1px 4px 1px 1px; border-color: #808080; border-style: solid;
 	clear: both
 }
 
-#list-controls {font-weight: bold; font-size: 1.4em;
+.list-controls {font-weight: bold; font-size: 1.4em;
 	width: 80%; margin-left: auto; margin-right: auto;
 	color: #ffdddd; background-color: #606060;
 	padding: 4px 0px; border-width: 1px 4px 0px 1px;
 	border-color: #808080; border-style: solid;
 }
-#list-controls a {
+.list-controls a {
 	color: #ddddff; font-weight: bold; text-decoration: none;
 }
-#list-controls span {padding: 0px 0.25em}
+.list-controls span {padding: 0px 0.25em}
+.list-foot {text-align: center}
 
 div.tweet {border-bottom: 1px #808080 dotted; 
 	padding: 0.5em 0.25em 0.25em 0.25em;

@@ -29,7 +29,8 @@
 			"username+" => "Sender - A-Z", "username-" => "Sender - Z-A"),
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
-			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),			  "chart" => array("week|day",null),"stats" => array("show",null))
+			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),
+			"chart" => array("week|day",null),"stats" => array("show",null))
 	);
 
 	$params = parse_params();
@@ -40,8 +41,12 @@
 			."<span class=\"archname\">$search</span></a></h1>\n");
 	}
 
-	function get_controls($page,$pages) {
+	/*
+	* Optional argument $full - if set to 0 only returns paging controls
+	*/
+	function get_controls($page,$pages,$full=1) {
 		global $cfg;
+		$sp = "&nbsp;&nbsp;&nbsp;";
 
 		$params = get_params();
 
@@ -82,10 +87,15 @@
 
 		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>\n\n";
 
+		if($full == 0) {
+			echo "<div class=\"controls1 list-foot\">$paging $sp $numbering</div>";
+			return;
+		}
+
 		$search = "<form method=\"get\" action=\"$uri\" id=\"searchbar\">\n";
 		
 		$sval = (isset($params['q']))?$params['q']:"";
-		
+		$sval = preg_replace('/"/','&quot;',$sval);
 		$search .= "<input type=\"text\" size=\"20\" name=\"q\" "
 			."id=\"tsearch\" value=\"$sval\" />\n";
 
@@ -122,6 +132,7 @@
 
 		$search .= "</form>\n";
 
+
 		$unset = "";
 
 		if(isset($params['q']) && $params['q'] != "") {
@@ -145,9 +156,8 @@
 			$stats = "<a href=\"$uri?$qs\">Show&nbsp;Stats</a>";
 		}
 
-		$sp = "&nbsp;&nbsp;&nbsp;";
-		echo "<div id=\"controls1\">$paging $sp $numbering $sp $search</div>"
-			."<div id=\"controls2\">$chart $sp $stats $sp $unset</div>";
+		echo "<div class=\"controls1\">$paging $sp $numbering $sp $search</div>"
+			."<div class=\"controls2\">$chart $sp $stats $sp $unset</div>";
 
 	}
 
@@ -184,7 +194,6 @@
 		}
 
 		$res = $conn->query($sql);
-
 		$tweets = array();
 
 		while($row = $res->fetch_assoc()) {
@@ -626,25 +635,52 @@
 	* TODO: search options/intelligence
 	*/
 	function parse_search($search,$table="") {
-		global $cfg;
-
-		$search = trim($search);
+		global $cfg, $conn;
+		$t_search = "";
+		$u_search = "";
 
 		if(preg_match('/^(user:)([^ ]*)/',$search,$matches)) {
-			return 'us.username = "'.$matches[2].'"';
+			$u_search .= 'us.username = "'.$matches[2].'" ';
+			$search = preg_replace('/user:'.$matches[2].'/','',$search);
+		}
+		preg_match_all('/"[^"]*"/',$search,$quoted);
+
+		// quoted terms matched exactly at word boundaries
+		// TODO: escape regex special characters?
+		foreach($quoted[0] as $term) {
+			$term = trim(stripslashes($term),'"');
+			$term = $conn->real_escape_string($term);
+			$t_search .= 'text regexp \'[[:<:]]'.$term.'[[:>:]]\' and ';
+			$search = preg_replace('/\\\"'.$term.'\\\"/','',$search);
+
+		}
+		// allow use of * and ? as wildcards 
+		$search = preg_replace('/\*/','%',$search);
+		$search = preg_replace('/\?/','_',$search);
+		
+		$terms = preg_split('/[ ,]/',trim($search));
+
+		foreach($terms as $term) {
+			// boolean options, get rid of empty terms and any explicit "and"
+			if($term == "") {
+				continue;
+			} elseif(strtolower($term) == "or" && $t_search) {
+				$t_search .= preg_replace('/and $/','or ',$t_search);
+				continue;
+			} elseif(strtolower($search[$i]) == "and") {
+				continue;
+			}
+			$t_search .= "tw.text like '%$term%' and ";
 		}
 
-		$t_search = "tw.text like '%$search%'";
-
-		$u_search = "us.username like '%$search%'";
-
-		if($table == "tw_users") {
+		$t_search = preg_replace('/(and|or) $/','',$t_search); 
+		if($table == "" && $t_search != "" && $u_search != "") {
+			return "($t_search and $u_search)";
+		} elseif($table == "tw_users" || $u_search) {
 			return $u_search;
-		} elseif($table == "tw_tweets") {
+		} else {
 			return $t_search;
 		}
-
-		return "($t_search or $u_search)";
 	}
 
 	function parse_params() {
