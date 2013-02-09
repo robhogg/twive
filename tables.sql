@@ -58,7 +58,7 @@ create table tw_keywords (
 archive varchar(12),
 keyword varchar(100),
 occurrences int default 0,
-primary key (keyword)
+primary key (archive,keyword)
 );
 
 create table tw_stop_words (
