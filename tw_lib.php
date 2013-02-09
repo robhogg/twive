@@ -511,6 +511,8 @@
 				error_log("Error writing $tid to tw_tweets: ".$conn->error);
 				return 0;
 			}
+
+			extract_keywords($archive,$text);
 		}
 
 		$lcheck_sql = "select tid from tw_archive_link where tid = '$tid' "
@@ -662,5 +664,40 @@
 		$pout['crit'] = ($pout['q'] == "")?"":parse_search($pout['q']);
 
 		return $pout;
+	}
+
+	function extract_keywords($archive,$text) {
+		global $conn;
+
+		$text = preg_replace('!http://[^ ]*!','',$text);
+		preg_match_all("/[@#]?[-'a-zA-Z]{3,}\b/",$text,$keywords);
+
+
+		foreach($keywords[0] as $keyword) {
+			$keyword = $conn->real_escape_string(trim($keyword,"\"'"));
+			if(substr($keyword,0,1) == '@') {
+				continue;
+			}
+
+			$test_sql = "select keyword,occurrences from tw_keywords "
+				."where keyword = '$keyword' and archive = '$archive'";
+
+			$res = $conn->query($test_sql);
+
+			if($conn->affected_rows == 0) {
+				$ins_sql = "insert into tw_keywords values ('$archive','$keyword',1)";
+
+				$conn->query($ins_sql);
+			} else {
+				$row = $res->fetch_assoc();
+
+				$occ = $row['occurrences'] + 1;
+
+				$upd_sql = "update tw_keywords set occurrences = $occ "
+					."where archive = '$archive' and keyword = '$keyword'";
+			
+				$conn->query($upd_sql);
+			}
+		}
 	}
 ?>

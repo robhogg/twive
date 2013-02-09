@@ -53,3 +53,16 @@ archive varchar(12),
 tid varchar(21),
 primary key (archive,tid)
 );
+
+create table tw_keywords (
+archive varchar(12),
+keyword varchar(100),
+occurrences int default 0,
+primary key (keyword)
+);
+
+create table tw_stop_words (
+stop_word varchar(100),
+primary key (stop_word)
+);
+)
