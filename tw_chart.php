@@ -38,5 +38,8 @@
 		echo draw_chart($data);
 	} elseif(isset($params['stats'])) {
 		show_stats($params['archive'],$params['q']);
+	} elseif(isset($params['cloud'])) {
+		get_cloud($params['archive']);
 	}
+
 ?>

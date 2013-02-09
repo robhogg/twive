@@ -30,7 +30,8 @@
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
 			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),
-			"chart" => array("week|day",null),"stats" => array("show",null))
+			"chart" => array("week|day",null),"stats" => array("show",null),
+			"cloud" => array("keyword|hash",null))
 	);
 
 	$params = parse_params();
@@ -144,7 +145,8 @@
 			$qs = qs_set_params(array("chart" => ""));
 			$chart = "<a href=\"$uri?$qs\">Hide&nbsp;Chart</a>";
 		} else {
-			$qs = qs_set_params(array("chart" => "week","stats" => ""));
+			$qs = qs_set_params(array("chart" => "week","stats" => "",
+				"cloud" => ""));
 			$chart = "<a href=\"$uri?$qs\">Show&nbsp;Chart</a>";
 		}
 
@@ -152,12 +154,22 @@
 			$qs = qs_set_params(array("stats" => ""));
 			$stats = "<a href=\"$uri?$qs\">Hide&nbsp;Stats</a>";
 		} else {
-			$qs = qs_set_params(array("stats" => "show","chart" => ""));
+			$qs = qs_set_params(array("stats" => "show","chart" => "",
+				"cloud" => ""));
 			$stats = "<a href=\"$uri?$qs\">Show&nbsp;Stats</a>";
 		}
 
+		if(isset($params["cloud"])) {
+			$qs = qs_set_params(array("cloud" => ""));
+			$cloud = "<a href=\"$uri?$qs\">Hide&nbsp;Cloud</a>";
+		} else {
+			$qs = qs_set_params(array("stats" => "","chart" => "",
+				"cloud" => "keyword"));
+			$cloud = "<a href=\"$uri?$qs\">Keyword&nbsp;Cloud</a>";
+		}
+
 		echo "<div class=\"controls1\">$paging $sp $numbering $sp $search</div>"
-			."<div class=\"controls2\">$chart $sp $stats $sp $unset</div>";
+			."<div class=\"controls2\">$chart $sp $stats $sp $cloud $sp $unset</div>";
 
 	}
 
@@ -735,5 +747,42 @@
 				$conn->query($upd_sql);
 			}
 		}
+	}
+
+	/*
+	* optional parameter $type can be "hash" or "keyword"
+	* optional parameter $crit - get cloud for search (not implemented yet)
+	*/
+	function get_cloud($archive,$type="keyword",$crit="") {
+		global $conn;
+		$rev = ($type == "hash")?"":" not";
+		$where = "archive = '$archive' and keyword$rev like '#%' "
+			."and keyword not in (select stop_word from tw_stop_words) "
+			."order by occurrences desc limit 100";
+		$kw_sql = "select keyword,occurrences from tw_keywords where $where";
+
+		$res = $conn->query($kw_sql);
+
+		$max = 0;
+		$keywords = array();
+		while($row = $res->fetch_assoc()) {
+			$keywords[$row['keyword']] = $row['occurrences'];
+			$max = ($row['occurrences'] > $max)?$row['occurrences']:$max;
+		}
+
+		ksort($keywords);
+
+		$cloud = '<div class="tag_cloud">';
+
+		foreach($keywords as $keyword => $occ) {
+			$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
+			$cloud .= '<span class="tag" style="font-size: '
+				.($occ / $max * 100 + 100)
+				.'%"><a href="'.$uri[0].'?q=%22'.$keyword.'%22">'
+				.$keyword.'</a> </span>';
+		}
+		$cloud .= '</div>';
+
+		echo $cloud;
 	}
 ?>

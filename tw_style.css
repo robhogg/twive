@@ -68,3 +68,7 @@ div.tweet {border-bottom: 1px #808080 dotted;
 #chart_labels {clear: both}
 #chart ul {margin: 5% 0% 5% 10%}
 #chart ul li {font-size: large}
+
+/* Tag cloud */
+.tag_cloud {margin: 10px 5px 10px 5px; text-align: center}
+.tag_cloud {color: #000}
