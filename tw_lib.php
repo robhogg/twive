@@ -53,7 +53,7 @@
 
 		$params = get_params();
 
-		$paging = "<span id=\"paging\">";
+		$paging = "<span class=\"paging\">";
 
 		$uri = preg_replace('/\?.*/','',$_SERVER['REQUEST_URI']);
 
@@ -67,28 +67,28 @@
 
 		if($page > 1) {
 			$qs = qs_set_params(array("page" => $page - 1));
-			$paging .= " <a href=\"$uri?$qs\" id=\"prev_page\">&lt;</a>";
+			$paging .= " <a href=\"$uri?$qs\" class=\"prev_page\">&lt;</a>";
 		} else {
 			$paging .= " &lt;";
 		}
 
 		if($page < $pages) {
 		   $qs = qs_set_params(array("page" => $page + 1));	
-			$paging .= " <a href=\"$uri?$qs\" id=\"prev_page\">&gt;</a>";
+			$paging .= " <a href=\"$uri?$qs\" class=\"next_page\">&gt;</a>";
 		} else {
 			$paging .= " &gt;";
 		}
 
 		if($page < $pages - 1) {
 			$qs = qs_set_params(array("page" => $pages));
-			$paging .= " <a href=\"$uri?$qs\" id=\"last_page\">&gt;|</a>";
+			$paging .= " <a href=\"$uri?$qs\" class=\"last_page\">&gt;|</a>";
 		} else {
 			$paging .= " &gt;|";
 		}
 
 		$paging .= "</span>\n\n";
 
-		$numbering = "<span id=\"pagenum\">Page $page of $pages</span>\n\n";
+		$numbering = "<span class=\"pagenum\">Page $page of $pages</span>\n\n";
 
 		if($full == 0) {
 			echo "<div class=\"controls1 list-foot\">$paging $sp $numbering</div>";
