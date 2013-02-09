@@ -23,17 +23,25 @@
 	if(! isset($params['archive'])) {
 		$params = parse_params();
 	}
-	if(date("H") >= 12) {
-		$params['chartfrom'] = date("Y-m-d 00:00:00", time() - (156 * 3600)); 
-		$params['chartto'] = date("Y-m-d 23:59:59");
-	} else {
-		$params['chartfrom'] = date("Y-m-d 12:00:00", time() - (156 * 3600)); 
-		$params['chartto'] = date("Y-m-d 11:59:59");
-	}
 
 	if(isset($params['chart']) && $params['chart'] != "") {
+		$chartwc =  date("Y-m-d H:i:s",strtotime($params['chartwe']) - 168 * 3600 + 1);
+		$chartprev = date("Y-m-d H:i:s",strtotime($params['chartwe']) - 168 * 3600);
+		$chartnext = date("Y-m-d H:i:s",strtotime($params['chartwe']) + 168 * 3600);
+
+		$prev_qs = qs_set_params(array("chartwe" => $chartprev));
+		$next_qs = qs_set_params(array("chartwe" => $chartnext));
+		$period = date("j M Y a",strtotime($chartwc))." - "
+			.date("j M Y a",strtotime($params['chartwe']));
+		$prev_link = "<a href=\"" .$params['uri']."?$prev_qs\">&lt; Prev</a>";
+		$next_link = "<a href=\"" .$params['uri']."?$next_qs\">Next &gt;</a>";
+		$controls = "<div id=\"chart-controls\" class=\"list-controls\">$prev_link "
+			."&nbsp;&nbsp;$period&nbsp;&nbsp;$next_link</div>\n";
+
+		echo $controls;
+
 		$data = get_chart_data($params['archive'],$params['chart'],
-			$params['chartfrom'],$params['chartto'],$params['crit']);
+			$chartwc,$params['chartwe'],$params['crit']);
 
 		echo draw_chart($data);
 	} elseif(isset($params['stats'])) {

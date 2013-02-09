@@ -26,16 +26,18 @@ body {background-color: #bbffdd}
 #header h1 a:hover {text-decoration: underline}
 #archname {color: #ffdd99}
 
+#content {width: 80%; margin-left: auto; margin-right: auto}
+
 #footer {margin: 20px 0px 10px 0px; text-align: center}
 #footer p {text-align: center}
 
-#tweet-list {width: 80%; margin-left: auto; margin-right: auto;
+#tweet-list {
 	border-width: 1px 4px 1px 1px; border-color: #808080; border-style: solid;
 	clear: both
 }
 
 .list-controls {font-weight: bold; font-size: 1.4em;
-	width: 80%; margin-left: auto; margin-right: auto;
+	margin-left: auto; margin-right: auto;
 	color: #ffdddd; background-color: #606060;
 	padding: 4px 0px; border-width: 1px 4px 0px 1px;
 	border-color: #808080; border-style: solid;
@@ -59,7 +61,6 @@ div.tweet {border-bottom: 1px #808080 dotted;
 
 
 /* Chart */
-#chart {width: 80%; margin-left: auto; margin-right: auto}
 .chart_bar {float: left; background-color: #bbffdd}
 .chart_label {float: left}
 .chart_values {float: left}

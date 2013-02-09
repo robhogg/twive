@@ -30,8 +30,10 @@
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
 			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),
-			"chart" => array("week|day",null),"stats" => array("show",null),
-			"cloud" => array("keyword|hash",null))
+			"chart" => array("week|day",null),
+			"chartwe" => array("[0-9]{4}-[0-9]{2}-[0-9]{2} (11|23):59:59",
+				(date("a") == "am")?date("Y-m-d 11:59:59"):date("Y-m-d 23:59:59")), 
+			"stats" => array("show",null),"cloud" => array("keyword|hash",null))
 	);
 
 	$params = parse_params();
@@ -142,7 +144,7 @@
 		}
 
 		if(isset($params["chart"])) {
-			$qs = qs_set_params(array("chart" => ""));
+			$qs = qs_set_params(array("chart" => "","chartwe" => ""));
 			$chart = "<a href=\"$uri?$qs\">Hide&nbsp;Chart</a>";
 		} else {
 			$qs = qs_set_params(array("chart" => "week","stats" => "",
@@ -710,6 +712,9 @@
 		}
 
 		$pout['crit'] = ($pout['q'] == "")?"":parse_search($pout['q']);
+		
+		$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
+		$pout['uri'] = $uri[0];
 
 		return $pout;
 	}
