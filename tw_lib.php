@@ -426,7 +426,7 @@
 			"<a href=\"http://twitter.com/search?q=%23$1\" class=\"tweet-hash\">"
 			."#$1</a>",$text);
 
-		$tweet_link = '<a href="http://twitter.com/'.$auth['username'].'/status/'
+		$tweet_link = '<a href="http://twitter.com/'.$tweet['username'].'/status/'
 			.$tweet['tid'].'" class="tweet-permalink">'
 			.tweet_date_format($tweet['date']).'</a>';
 
