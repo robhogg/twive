@@ -685,7 +685,7 @@
 			$t_search .= "tw.text like '%$term%' and ";
 		}
 
-		$t_search = preg_replace('/(and|or) $/','',$t_search); 
+		$t_search = "(".preg_replace('/(and|or) $/','',$t_search).")"; 
 		if($table == "" && $t_search != "" && $u_search != "") {
 			return "($t_search and $u_search)";
 		} elseif($table == "tw_users" || $u_search) {
@@ -717,7 +717,7 @@
 	function extract_keywords($archive,$text) {
 		global $conn;
 
-		$text = preg_replace('!http://[^ ]*!','',$text);
+		$text = preg_replace('!https?://[^ ]*!','',$text);
 		preg_match_all("/[@#]?[-'a-zA-Z]{3,}\b/",$text,$keywords);
 
 
@@ -755,6 +755,8 @@
 	*/
 	function get_cloud($archive,$type="keyword",$crit="") {
 		global $conn;
+		$params = get_params();
+
 		$rev = ($type == "hash")?"":" not";
 		$where = "archive = '$archive' and keyword$rev like '#%' "
 			."and keyword not in (select stop_word from tw_stop_words) "
@@ -777,8 +779,8 @@
 		foreach($keywords as $keyword => $occ) {
 			$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
 			$cloud .= '<span class="tag" style="font-size: '
-				.($occ / $max * 100 + 100)
-				.'%"><a href="'.$uri[0].'?q=%22'.$keyword.'%22">'
+				.($occ / $max * 100 + 100).'%"><a href="'.$uri[0]
+				.'?q=%22'.$keyword.'%22&amp;cloud='.$params['cloud'].'">'
 				.$keyword.'</a> </span>';
 		}
 		$cloud .= '</div>';
