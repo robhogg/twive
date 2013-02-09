@@ -688,7 +688,7 @@
 		}
 
 		$t_search = "(".preg_replace('/(and|or) $/','',$t_search).")"; 
-		if($table == "" && $t_search != "" && $u_search != "") {
+		if($table == "" && $t_search != "()" && $u_search != "") {
 			return "($t_search and $u_search)";
 		} elseif($table == "tw_users" || $u_search) {
 			return $u_search;
