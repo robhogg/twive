@@ -748,6 +748,7 @@
 		
 		$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
 		$pout['uri'] = $uri[0];
+		$pout['dir'] = dirname($_SERVER['PHP_SELF']);
 
 		return $pout;
 	}

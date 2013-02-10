@@ -23,6 +23,7 @@
 
 	$params = parse_params();
 	$archdet = get_archive_details($params['archive']);
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -30,8 +31,9 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta http-equiv="refresh" content="60">
 <title>Twitter archive for <?php echo $params['archive'] ?></title>
+<base href="<?php echo $params['dir']; ?>">
 
-<link rel="stylesheet" href="tw_style.css">
+<link rel="stylesheet" href="<?php echo $params['dir']; ?>/tw_style.css">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js">
 </script>
 <script type="text/javascript">
@@ -54,5 +56,6 @@
 		<p><a href="https://github.com/robhogg/twive">Twive</a> is free software,
 		licensed under the GNU General Public Licence.</p>
 	</div>
+	<!--<div id="script-params"><?php echo json_encode($params); ?></div>-->
 </body>
 </html>
