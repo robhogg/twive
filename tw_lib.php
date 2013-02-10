@@ -361,7 +361,7 @@
 		
 		$interval = 3600;
 		$phpinformat = "Y-m-d H:00";
-		$phpoutformat = "d/m H";
+		$phpoutformat = "H";
 		$dbformat = "%Y-%m-%d %H:00";
 		if($type == 'week') {
 			$interval *= 12;

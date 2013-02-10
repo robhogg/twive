@@ -25,23 +25,45 @@
 	}
 
 	if(isset($params['chart']) && $params['chart'] != "") {
-		$chartwc =  date("Y-m-d H:i:s",strtotime($params['chartwe']) - 168 * 3600 + 1);
-		$chartprev = date("Y-m-d H:i:s",strtotime($params['chartwe']) - 168 * 3600);
-		$chartnext = date("Y-m-d H:i:s",strtotime($params['chartwe']) + 168 * 3600);
+		if($params['chart'] == 'day') {
+			$chartfrom =  date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) - 86400 + 1);
+			$chartto = $params['chartwe'];
+			$chartprev = date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) - 86400);
+			$chartnext = date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) + 86400);
+			$period = date("D j M Y",strtotime($chartfrom));
+			$other_link = "<a href=\"".$params['uri']."?"
+				.qs_set_params(array("chart" => "week"))
+				."\">By week</a>";
+		} else {
+			$chartfrom =  date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) - 168 * 3600 + 1);
+			$chartto = $params['chartwe'];
+			$chartprev = date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) - 168 * 3600);
+			$chartnext = date("Y-m-d H:i:s",
+				strtotime($params['chartwe']) + 168 * 3600);
+			$period = date("j M Y a",strtotime($chartfrom))." - "
+				.date("j M Y a",strtotime($params['chartwe']));
+			$other_link = "<a href=\"".$params['uri']."?"
+				.qs_set_params(array("chart" => "day"))
+				."\">By day</a>";
+		}
 
 		$prev_qs = qs_set_params(array("chartwe" => $chartprev));
 		$next_qs = qs_set_params(array("chartwe" => $chartnext));
-		$period = date("j M Y a",strtotime($chartwc))." - "
-			.date("j M Y a",strtotime($params['chartwe']));
 		$prev_link = "<a href=\"" .$params['uri']."?$prev_qs\">&lt; Prev</a>";
 		$next_link = "<a href=\"" .$params['uri']."?$next_qs\">Next &gt;</a>";
 		$controls = "<div id=\"chart-controls\" class=\"list-controls\">$prev_link "
-			."&nbsp;&nbsp;$period&nbsp;&nbsp;$next_link</div>\n";
+			."&nbsp;&nbsp;$period&nbsp;&nbsp;$next_link"
+			."&nbsp; &nbsp;&nbsp;$other_link</div>\n";
 
 		echo $controls;
 
 		$data = get_chart_data($params['archive'],$params['chart'],
-			$chartwc,$params['chartwe'],$params['crit']);
+			$chartfrom,$chartto,$params['crit']);
 
 		echo draw_chart($data);
 	} elseif(isset($params['stats'])) {
