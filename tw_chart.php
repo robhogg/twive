@@ -20,8 +20,8 @@
 
 	require_once("tw_lib.php");
 
-	if(! isset($params['archive'])) {
-		$params = parse_params();
+	if(TW_INDEX !== true) {
+		$params = get_params();
 	}
 
 	if(isset($params['chart']) && $params['chart'] != "") {

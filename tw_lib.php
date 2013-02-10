@@ -670,6 +670,10 @@
 			$pout[$parts[0]] = urldecode($parts[1]);
 		}
 
+		$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
+		$pout['uri'] = $uri[0];
+		$pout['dir'] = dirname($_SERVER['PHP_SELF']);
+
 		return $pout;
 	}
 
@@ -745,10 +749,9 @@
 		}
 
 		$pout['crit'] = ($pout['q'] == "")?"":parse_search($pout['q']);
-		
-		$uri = preg_split('/\?/',$_SERVER['REQUEST_URI']);
-		$pout['uri'] = $uri[0];
-		$pout['dir'] = dirname($_SERVER['PHP_SELF']);
+	
+		$pout['dir'] = $p['dir'];
+		$pout['uri'] = $p['uri'];
 
 		return $pout;
 	}
