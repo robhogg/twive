@@ -30,7 +30,7 @@
 		'params' => array("archive" => array("[-_a-zA-Z0-9]+",null),
 			"page" => array("[0-9]+",1),"perpage" => array("[1-9][0-9]*",25),
 			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),
-			"chart" => array("week|day",null),
+			"chart" => array("week|day(byuser)?",null),
 			"chartwe" => array("[0-9]{4}-[0-9]{2}-[0-9]{2} (11|23):59:59",
 				(date("a") == "am")?date("Y-m-d 11:59:59"):date("Y-m-d 23:59:59")), 
 			"stats" => array("show",null),"cloud" => array("keyword|hash",null))
@@ -358,12 +358,12 @@
 	// TODO: add different chart options
 	function get_chart_data($archive,$type,$from,$to,$crit) {
 		global $conn;
-		
+
 		$interval = 3600;
 		$phpinformat = "Y-m-d H:00";
 		$phpoutformat = "H";
 		$dbformat = "%Y-%m-%d %H:00";
-		if($type == 'week') {
+		if(preg_match('/^week/',$type)) {
 			$interval *= 12;
 			$phpinformat = "Y-m-d A";
 			$phpoutformat = "d/m a";
@@ -378,8 +378,14 @@
 			$t += $interval;
 		}
 
-		$sql = "select date_format(date,'$dbformat') as label, count(*) as num "
-			."from tw_tweets tw, tw_users us, tw_archive_link al "
+		$sql = "select date_format(date,'$dbformat') as label, ";
+		if(preg_match('/byuser$/',$type)) {
+			$sql .= "count(distinct tw.uid) as num ";
+		} else {
+			$sql .= "count(*) as num ";
+		}
+			
+		$sql .= "from tw_tweets tw, tw_users us, tw_archive_link al "
 			."where tw.tid = al.tid and al.archive = '$archive' and "
 			."tw.uid = us.uid and date between '$from' and '$to' ";
 		

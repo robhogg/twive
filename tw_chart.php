@@ -25,7 +25,11 @@
 	}
 
 	if(isset($params['chart']) && $params['chart'] != "") {
-		if($params['chart'] == 'day') {
+		preg_match('/(day|week)(byuser)?/',$params['chart'],$ct);
+		$user = (isset($ct[2]))?$ct[2]:"";	
+		$dayweek = $ct[1];
+
+		if(preg_match('/^day/',$params['chart'])) {
 			$chartfrom =  date("Y-m-d H:i:s",
 				strtotime($params['chartwe']) - 86400 + 1);
 			$chartto = $params['chartwe'];
@@ -35,8 +39,8 @@
 				strtotime($params['chartwe']) + 86400);
 			$period = date("D j M Y",strtotime($chartfrom));
 			$other_link = "<a href=\"".$params['uri']."?"
-				.qs_set_params(array("chart" => "week"))
-				."\">By week</a>";
+				.qs_set_params(array("chart" => "week$user"))
+				."\">By&nbsp;week</a>";
 		} else {
 			$chartfrom =  date("Y-m-d H:i:s",
 				strtotime($params['chartwe']) - 168 * 3600 + 1);
@@ -48,23 +52,36 @@
 			$period = date("j M Y a",strtotime($chartfrom))." - "
 				.date("j M Y a",strtotime($params['chartwe']));
 			$other_link = "<a href=\"".$params['uri']."?"
-				.qs_set_params(array("chart" => "day"))
-				."\">By day</a>";
+				.qs_set_params(array("chart" => "day$user"))
+				."\">By&nbsp;day</a>";
+		}
+
+		if($user == "") {
+			$user_link = "<a href=\"".$params['uri']."?"
+				.qs_set_params(array("chart" => "${dayweek}byuser"))
+				."\">Users</a>";
+			$chart_title = "Showing tweets for $period";
+		} else {
+			$user_link = "<a href=\"".$params['uri']."?"
+				.qs_set_params(array("chart" => "${dayweek}"))
+				."\">Tweets</a>";
+				$chart_title = "Showing active users for $period";
 		}
 
 		$prev_qs = qs_set_params(array("chartwe" => $chartprev));
 		$next_qs = qs_set_params(array("chartwe" => $chartnext));
 		$prev_link = "<a href=\"" .$params['uri']."?$prev_qs\">&lt; Prev</a>";
 		$next_link = "<a href=\"" .$params['uri']."?$next_qs\">Next &gt;</a>";
-		$controls = "<div id=\"chart-controls\" class=\"list-controls\">$prev_link "
-			."&nbsp;&nbsp;$period&nbsp;&nbsp;$next_link"
-			."&nbsp; &nbsp;&nbsp;$other_link</div>\n";
+		$controls = "<div id=\"chart-controls\" class=\"list-controls\">"
+			."$prev_link&nbsp;&nbsp;&nbsp;&nbsp;$next_link"
+			."&nbsp; &nbsp;&nbsp;$user_link"
+			."&nbsp;&nbsp;&nbsp;$other_link</div>\n";
 
 		echo $controls;
 
 		$data = get_chart_data($params['archive'],$params['chart'],
 			$chartfrom,$chartto,$params['crit']);
-
+		echo("<h3>$chart_title</h3>\n");
 		echo draw_chart($data);
 	} elseif(isset($params['stats'])) {
 		show_stats($params['archive'],$params['q']);

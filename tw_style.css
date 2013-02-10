@@ -64,6 +64,7 @@ div.tweet {border-bottom: 1px #808080 dotted;
 .chart_bar {float: left; background-color: #bbffdd}
 .chart_label {float: left}
 .chart_values {float: left}
+#chart h3 {text-align: center; color: #056010}
 #chart_pane {height: 200px; background-color: #056010; clear: both}
 #chart_values {clear: both}
 #chart_labels {clear: both}
