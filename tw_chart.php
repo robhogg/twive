@@ -29,6 +29,8 @@
 		$user = (isset($ct[2]))?$ct[2]:"";	
 		$dayweek = $ct[1];
 
+		$link_base = $params['dir']."/".$params['archive'];
+
 		if(preg_match('/^day/',$params['chart'])) {
 			$chartfrom =  date("Y-m-d H:i:s",
 				strtotime($params['chartwe']) - 86400 + 1);
@@ -38,7 +40,7 @@
 			$chartnext = date("Y-m-d H:i:s",
 				strtotime($params['chartwe']) + 86400);
 			$period = date("D j M Y",strtotime($chartfrom));
-			$other_link = "<a href=\"".$params['uri']."?"
+			$other_link = "<a href=\"$link_base?"
 				.qs_set_params(array("chart" => "week$user"))
 				."\">Week</a>";
 		} else {
@@ -51,18 +53,18 @@
 				strtotime($params['chartwe']) + 168 * 3600);
 			$period = date("j M Y a",strtotime($chartfrom))." - "
 				.date("j M Y a",strtotime($params['chartwe']));
-			$other_link = "<a href=\"".$params['uri']."?"
+			$other_link = "<a href=\"$link_base?"
 				.qs_set_params(array("chart" => "day$user"))
 				."\">Day</a>";
 		}
 
 		if($user == "") {
-			$user_link = "<a href=\"".$params['uri']."?"
+			$user_link = "<a href=\"$link_base?"
 				.qs_set_params(array("chart" => "${dayweek}byuser"))
 				."\">Users</a>";
 			$chart_title = "Showing tweets for $period";
 		} else {
-			$user_link = "<a href=\"".$params['uri']."?"
+			$user_link = "<a href=\"$link_base?"
 				.qs_set_params(array("chart" => "${dayweek}"))
 				."\">Tweets</a>";
 				$chart_title = "Showing active users for $period";
@@ -70,8 +72,8 @@
 
 		$prev_qs = qs_set_params(array("chartwe" => $chartprev));
 		$next_qs = qs_set_params(array("chartwe" => $chartnext));
-		$prev_link = "<a href=\"" .$params['uri']."?$prev_qs\">&lt; Prev</a>";
-		$next_link = "<a href=\"" .$params['uri']."?$next_qs\">Next &gt;</a>";
+		$prev_link = "<a href=\"$link_base?$prev_qs\">&lt; Prev</a>";
+		$next_link = "<a href=\"$link_base?$next_qs\">Next &gt;</a>";
 		$controls = "<div id=\"chart-controls\" class=\"list-controls\">"
 			."$prev_link&nbsp;&nbsp;&nbsp;&nbsp;$next_link"
 			."&nbsp; &nbsp;&nbsp;$user_link"
