@@ -19,7 +19,7 @@
    */
 
 	require("tw_lib.php");
-   $Index = true;	
+   define("TW_INDEX",true);	
 
 	$params = parse_params();
 	$archdet = get_archive_details($params['archive']);
