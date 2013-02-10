@@ -61,11 +61,15 @@ div.tweet {border-bottom: 1px #808080 dotted;
 
 
 /* Chart */
-.chart_bar {float: left; background-color: #bbffdd}
-.chart_label {float: left}
-.chart_values {float: left}
+.chart_bar {background-color: #bbffdd;}
+.chart_bar_container {float:left; height: 100%; background-color: #056010;
+ margin: 0.2%; cursor: pointer; 
+ background: -moz-linear-gradient(top,#b8860b,#056010);
+ background: -webkit-linear-gradient(top,#b8860b,#056010)}
+.chart_label {float: left; text-align: center}
+.chart_values {float: left; text-align: center}
 #chart h3 {text-align: center; color: #056010}
-#chart_pane {height: 200px; background-color: #056010; clear: both}
+#chart_pane {height: 200px; clear: both}
 #chart_values {clear: both}
 #chart_labels {clear: both}
 #chart ul {margin: 5% 0% 5% 10%}

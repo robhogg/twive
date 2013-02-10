@@ -362,6 +362,7 @@
 		$interval = 3600;
 		$phpinformat = "Y-m-d H:00";
 		$phpoutformat = "H";
+		$idformat = "Y-m-d-H:i:s";
 		$dbformat = "%Y-%m-%d %H:00";
 		if(preg_match('/^week/',$type)) {
 			$interval *= 12;
@@ -374,7 +375,7 @@
 		$t = strtotime($from);
 		while(date("Y-m-d H:i:s",$t) < $to) {
 			array_push($labels,array(date($phpinformat,$t),
-				date($phpoutformat,$t)));
+				date($phpoutformat,$t),date($idformat,$t)));
 			$t += $interval;
 		}
 
@@ -402,11 +403,11 @@
 			if($row['label'] == $label[0]) {
 				$max = ($row['num'] > $max)?$row['num']:$max;
 				array_push($dataout,array('label' => $label[1],
-					'num' => $row['num']));
+					'num' => $row['num'], 'id' => $label[2]));
 				$row = $res->fetch_assoc();
 			} else {
 				array_push($dataout,array('label' => $label[1],
-					'num' => 0));
+					'num' => 0,'id' => $label[2]));
 			}
 		}
 
@@ -423,6 +424,7 @@
 		}
 		
 		$col_width = 100 / count($data);
+		$bar_width = $col_width - 0.4;
 
 		$values = "";
 		$labels = "";
@@ -432,11 +434,12 @@
 				."$col_width%\">".$datum['num']."</div>\n";
 			$labels .= "<div class=\"chart_label\" style=\"width: "
 				."$col_width%\">".$datum['label']."</div>\n";
-			// "out of 101" because a div with height 0 has width 0
-			$col_height = 101 - (100 / $params['max']) * $datum['num'];
-			$chart .= "<div id=\"bar-".$datum['label']."-".$datum['num']."\" "
-				."class=\"chart_bar\" style=\"width: "
-				."$col_width%; height: $col_height%\">&nbsp;</div>\n";
+			// "100 - 99" because a div with height 0 has width 0
+			$col_height = 100 - (99 / $params['max']) * $datum['num'];
+			$chart .= "<div class=\"chart_bar_container\" id=\"bar-"
+				.$datum['id']."\" style=\"width: $bar_width%\">"
+				."<div class=\"chart_bar\" style=\"height: $col_height%\">"
+				."&nbsp;</div></div>\n";
 		}
 
 		return "<div id=\"chart_values\">\n$values\n</div>\n"

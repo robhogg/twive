@@ -40,7 +40,7 @@
 			$period = date("D j M Y",strtotime($chartfrom));
 			$other_link = "<a href=\"".$params['uri']."?"
 				.qs_set_params(array("chart" => "week$user"))
-				."\">By&nbsp;week</a>";
+				."\">Week</a>";
 		} else {
 			$chartfrom =  date("Y-m-d H:i:s",
 				strtotime($params['chartwe']) - 168 * 3600 + 1);
@@ -53,7 +53,7 @@
 				.date("j M Y a",strtotime($params['chartwe']));
 			$other_link = "<a href=\"".$params['uri']."?"
 				.qs_set_params(array("chart" => "day$user"))
-				."\">By&nbsp;day</a>";
+				."\">Day</a>";
 		}
 
 		if($user == "") {
