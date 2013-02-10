@@ -36,13 +36,11 @@
 <link rel="stylesheet" href="<?php echo $params['dir']; ?>/tw_style.css">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js">
 </script>
+<script src="<?php echo $params['dir']; ?>/tw_lib.js"></script>
 <script type="text/javascript">
-/*$(document).ready(function () {
-	$(".chart_bar").bind("click", function() {
-		$(this).css("background-color","red");
-		alert($(this).attr("id") + ": " +$(this).css("height"));
-	});
-});*/
+$(document).ready(function () {
+	initialise();
+});
 </script>
 </head>
 <body>
@@ -56,6 +54,7 @@
 		<p><a href="https://github.com/robhogg/twive">Twive</a> is free software,
 		licensed under the GNU General Public Licence.</p>
 	</div>
-	<!--<div id="script-params"><?php echo json_encode($params); ?></div>-->
+	<div id="script-params" style="display: none"><?php 
+		echo json_encode($params); ?>
 </body>
 </html>
