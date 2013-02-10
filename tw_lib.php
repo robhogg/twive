@@ -358,8 +358,27 @@
 	// TODO: add different chart options
 	function get_chart_data($archive,$type,$from,$to,$crit) {
 		global $conn;
+		
+		$interval = 3600;
+		$phpinformat = "Y-m-d H:00";
+		$phpoutformat = "d/m H";
+		$dbformat = "%Y-%m-%d %H:00";
+		if($type == 'week') {
+			$interval *= 12;
+			$phpinformat = "Y-m-d A";
+			$phpoutformat = "d/m a";
+			$dbformat = "%Y-%m-%d %p";
+		}
 
-		$sql = "select date_format(date,'%Y-%m-%d %p') as label, count(*) as num "
+		$labels = array();
+		$t = strtotime($from);
+		while(date("Y-m-d H:i:s",$t) < $to) {
+			array_push($labels,array(date($phpinformat,$t),
+				date($phpoutformat,$t)));
+			$t += $interval;
+		}
+
+		$sql = "select date_format(date,'$dbformat') as label, count(*) as num "
 			."from tw_tweets tw, tw_users us, tw_archive_link al "
 			."where tw.tid = al.tid and al.archive = '$archive' and "
 			."tw.uid = us.uid and date between '$from' and '$to' ";
@@ -370,24 +389,31 @@
 
 		$res = $conn->query($sql);
 
-		$data = array();
 		$max = 0;
-		while($row = $res->fetch_assoc()) {
-			array_push($data,$row);
-			$max = ($max < $row['num'])?$row['num']:$max;
+		$dataout = array();
+		$row = $res->fetch_assoc();
+		foreach($labels as $label) {
+			if($row['label'] == $label[0]) {
+				$max = ($row['num'] > $max)?$row['num']:$max;
+				array_push($dataout,array('label' => $label[1],
+					'num' => $row['num']));
+				$row = $res->fetch_assoc();
+			} else {
+				array_push($dataout,array('label' => $label[1],
+					'num' => 0));
+			}
 		}
 
-		array_push($data,array("max" => $max));
+		array_push($dataout,array("max" => $max));
 
-		return $data;
+		return $dataout;
 	}
 
 	// TODO: investigate proper graphic library
 	function draw_chart($data) {
 		$params = array_pop($data);
-
-		if(count($data) == 0) {
-			return "<h2>No chart data for period</h2>";
+		if($params['max'] == 0) {
+			return "<h2>No tweets in period</h2>";
 		}
 		
 		$col_width = 100 / count($data);
@@ -398,10 +424,8 @@
 		foreach($data as $datum) {
 			$values .= "<div class=\"chart_values\" style=\"width: "
 				."$col_width%\">".$datum['num']."</div>\n";
-			$labl = preg_replace("/([0-9]{4})-([0-9]{2})-([0-9]{2}) (AM|PM)/",
-				'$3/$2<br />$4',$datum['label']);
 			$labels .= "<div class=\"chart_label\" style=\"width: "
-				."$col_width%\">$labl</div>\n";
+				."$col_width%\">".$datum['label']."</div>\n";
 			// "out of 101" because a div with height 0 has width 0
 			$col_height = 101 - (100 / $params['max']) * $datum['num'];
 			$chart .= "<div id=\"bar-".$datum['label']."-".$datum['num']."\" "
