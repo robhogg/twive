@@ -78,3 +78,7 @@ div.tweet {border-bottom: 1px #808080 dotted;
 /* Tag cloud */
 .tag_cloud {margin: 10px 5px 10px 5px; text-align: center}
 .tag_cloud {color: #000}
+
+
+/* Social connections */
+#social-connect {float: right; margin: 1em 1em 0em 0em}

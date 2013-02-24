@@ -47,6 +47,9 @@
 </head>
 <body>
 	<div id="header">
+      <div id="social-connect">
+         <?php include("tw_social.php"); ?>
+      </div>
 		<?php get_header('"'.urldecode($archdet['search']).'"'); ?>
 	</div>
 	<div id="content">
@@ -57,5 +60,7 @@
 		licensed under the GNU General Public Licence.</p>
 	</div>
 	<!--<div id="script-params"><?php echo json_encode($params); ?></div>-->
+   <script type="text/javascript" src="//assets.pinterest.com/js/pinit.js">
+   </script>
 </body>
 </html>
