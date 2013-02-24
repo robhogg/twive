@@ -60,12 +60,12 @@
 			$user_link = "<a href=\"".$params['uri']."?"
 				.qs_set_params(array("chart" => "${dayweek}byuser"))
 				."\">Users</a>";
-			$chart_title = "Showing tweets for $period";
+			$chart_title = "Tweets : $period";
 		} else {
 			$user_link = "<a href=\"".$params['uri']."?"
 				.qs_set_params(array("chart" => "${dayweek}"))
 				."\">Tweets</a>";
-				$chart_title = "Showing active users for $period";
+				$chart_title = "Active users : $period";
 		}
 
 		$prev_qs = qs_set_params(array("chartwe" => $chartprev));
@@ -83,10 +83,12 @@
 			$chartfrom,$chartto,$params['crit']);
 		echo("<h3>$chart_title</h3>\n");
 		echo draw_chart($data);
+
 	} elseif(isset($params['stats'])) {
 		show_stats($params['archive'],$params['q']);
 	} elseif(isset($params['cloud'])) {
 		get_cloud($params['archive']);
 	}
+
 
 ?>

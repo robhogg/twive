@@ -32,7 +32,7 @@
 			"q" => array(".+",null),"sort" => array("(date|username)[-+]","date-"),
 			"chart" => array("week|day(byuser)?",null),
 			"chartwe" => array("[0-9]{4}-[0-9]{2}-[0-9]{2} (11|23):59:59",
-				(date("a") == "am")?date("Y-m-d 11:59:59"):date("Y-m-d 23:59:59")), 
+				date("Y-m-d 23:59:59")), 
 			"stats" => array("show",null),"cloud" => array("keyword|hash",null))
 	);
 
@@ -450,8 +450,8 @@
 	function format_tweet($tweet) {
 		$authlink = '<a href="http://twitter.com/'.$tweet['username'].'" '
 			.'class="tweet-auth">'.$tweet['username'].':</a>';
-		
-		$text = preg_replace('/(https?:\/\/[^ ]*)/',
+
+		$text = preg_replace('/(https?:\/\/[^\s"\']*)/',
 			"<a href=\"$1\" class=\"tweet-link\">$1</a>",
 			$tweet['text']);
 		$text = preg_replace('/@([a-zA-Z0-9_]+)/',
@@ -826,4 +826,27 @@
 
 		echo $cloud;
 	}
+
+function google_chart_link($data,$title="Tweets",$size="300x225") {
+   $params = array_pop($data);
+
+   $range = floor($params['max'] / 100 + 1) * 100;
+
+   $link = "//chart.googleapis.com/chart?chxr=0,0,$range";
+   $link .= "&chxt=y&chbh=a&chs=$size&cht=bvg";
+   $link .= "&chco=056010&chf=bg,s,BBFFDD";
+   $link .= "&chds=0,".$params['max'];
+
+   $chd = "t:";
+
+   foreach($data as $datum) {
+      $chd .= $datum['num'].",";
+   }
+
+   $chd = rtrim($chd,',');
+
+   $link .= "&chd=$chd&chma=0,0,0,5&chtt=$title";
+
+   return $link;
+}
 ?>
